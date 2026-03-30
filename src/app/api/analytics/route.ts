@@ -1,6 +1,45 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+// Define types
+type WorkflowWithRelations = {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  stage: string;
+  assigneeId: string | null;
+  team: string | null;
+  tags: string;
+  dueDate: Date | null;
+  progress: number;
+  createdAt: Date;
+  updatedAt: Date;
+  assignee: { name: string | null } | null;
+  tasks: {
+    id: string;
+    title: string;
+    completed: boolean;
+    workflowId: string;
+    assigneeId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+};
+
+type TaskWithWorkflow = {
+  id: string;
+  title: string;
+  completed: boolean;
+  workflowId: string;
+  assigneeId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  workflow: {
+    assignee: { name: string | null } | null;
+  } | null;
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -8,12 +47,12 @@ export async function GET(request: Request) {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     // ── 1. All workflows ────────────────────────────────────────────────────
-    const workflows = await db.workflow.findMany({
+    const workflows = (await db.workflow.findMany({
       include: {
         tasks: true,
         assignee: { select: { name: true } },
       },
-    });
+    })) as WorkflowWithRelations[];
 
     // ── 2. Workflows by status ──────────────────────────────────────────────
     const byStatus = [
@@ -22,9 +61,10 @@ export async function GET(request: Request) {
       { label: "Review", stage: "REVIEW", color: "#f59e0b" },
       { label: "Completed", stage: "DONE", color: "#22c55e" },
       { label: "Blocked", stage: "BLOCKED", color: "#ef4444" },
-    ].map((s) => ({
+    ].map((s: { label: string; stage: string; color: string }) => ({
       ...s,
-      value: workflows.filter((w) => w.stage === s.stage).length,
+      value: workflows.filter((w: WorkflowWithRelations) => w.stage === s.stage)
+        .length,
     }));
 
     // ── 3. Priority breakdown ───────────────────────────────────────────────
@@ -32,22 +72,28 @@ export async function GET(request: Request) {
       { label: "High", priority: "HIGH", color: "#ef4444" },
       { label: "Medium", priority: "MEDIUM", color: "#f59e0b" },
       { label: "Low", priority: "LOW", color: "#22c55e" },
-    ].map((p) => ({
+    ].map((p: { label: string; priority: string; color: string }) => ({
       ...p,
-      value: workflows.filter((w) => w.priority === p.priority).length,
+      value: workflows.filter(
+        (w: WorkflowWithRelations) => w.priority === p.priority,
+      ).length,
     }));
 
     // ── 4. Overdue vs on-track ──────────────────────────────────────────────
     const now = new Date();
     const overdueCount = workflows.filter(
-      (w) => w.dueDate && new Date(w.dueDate) < now && w.stage !== "DONE",
+      (w: WorkflowWithRelations) =>
+        w.dueDate && new Date(w.dueDate) < now && w.stage !== "DONE",
     ).length;
     const onTrackCount = workflows.filter(
-      (w) => w.dueDate && new Date(w.dueDate) >= now && w.stage !== "DONE",
+      (w: WorkflowWithRelations) =>
+        w.dueDate && new Date(w.dueDate) >= now && w.stage !== "DONE",
     ).length;
-    const completedCount = workflows.filter((w) => w.stage === "DONE").length;
+    const completedCount = workflows.filter(
+      (w: WorkflowWithRelations) => w.stage === "DONE",
+    ).length;
     const noDueDateCount = workflows.filter(
-      (w) => !w.dueDate && w.stage !== "DONE",
+      (w: WorkflowWithRelations) => !w.dueDate && w.stage !== "DONE",
     ).length;
 
     const overdueVsOnTrack = [
@@ -65,23 +111,24 @@ export async function GET(request: Request) {
       teamMap[team].push(w.progress);
     }
     const avgProgressByTeam = Object.entries(teamMap)
-      .map(([team, progresses]) => ({
+      .map(([team, progresses]: [string, number[]]) => ({
         team,
         avg: Math.round(
-          progresses.reduce((a, b) => a + b, 0) / progresses.length,
+          progresses.reduce((a: number, b: number) => a + b, 0) /
+            progresses.length,
         ),
       }))
-      .sort((a, b) => b.avg - a.avg);
+      .sort((a: { avg: number }, b: { avg: number }) => b.avg - a.avg);
 
     // ── 6. Tasks completed per team member ──────────────────────────────────
-    const tasks = await db.task.findMany({
+    const tasks = (await db.task.findMany({
       where: { completed: true },
       include: {
         workflow: {
           include: { assignee: { select: { name: true } } },
         },
       },
-    });
+    })) as TaskWithWorkflow[];
 
     const memberTaskMap: Record<string, number> = {};
     for (const task of tasks) {
@@ -89,8 +136,8 @@ export async function GET(request: Request) {
       memberTaskMap[name] = (memberTaskMap[name] ?? 0) + 1;
     }
     const tasksByMember = Object.entries(memberTaskMap)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
+      .map(([name, count]: [string, number]) => ({ name, count }))
+      .sort((a: { count: number }, b: { count: number }) => b.count - a.count);
 
     // ── 7. Workflow completion rate over time ────────────────────────────────
     // Build daily buckets for the last `days` days
@@ -115,20 +162,25 @@ export async function GET(request: Request) {
       }
     }
 
-    const completionOverTime = Object.entries(buckets).map(([date, vals]) => ({
-      date: new Date(date).toLocaleDateString("en-ZA", {
-        day: "numeric",
-        month: "short",
+    const completionOverTime = Object.entries(buckets).map(
+      ([date, vals]: [string, { completed: number; created: number }]) => ({
+        date: new Date(date).toLocaleDateString("en-ZA", {
+          day: "numeric",
+          month: "short",
+        }),
+        ...vals,
       }),
-      ...vals,
-    }));
+    );
 
     // ── Summary stats ────────────────────────────────────────────────────────
     const totalWorkflows = workflows.length;
     const totalTasks = await db.task.count();
     const completedTasks = await db.task.count({ where: { completed: true } });
     const avgProgress = Math.round(
-      workflows.reduce((a, w) => a + w.progress, 0) / (totalWorkflows || 1),
+      workflows.reduce(
+        (a: number, w: WorkflowWithRelations) => a + w.progress,
+        0,
+      ) / (totalWorkflows || 1),
     );
 
     return NextResponse.json({

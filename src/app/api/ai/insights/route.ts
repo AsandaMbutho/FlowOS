@@ -25,12 +25,12 @@ type WorkflowWithRelations = {
 // GET /api/ai/insights — compute real insights from DB
 export async function GET() {
   try {
-    const workflows = await db.workflow.findMany({
+    const workflows = (await db.workflow.findMany({
       include: {
         assignee: { select: { name: true } },
         tasks: { select: { completed: true } },
       },
-    });
+    })) as WorkflowWithRelations[];
 
     const total = workflows.length;
     const blocked = workflows.filter(
@@ -70,13 +70,13 @@ export async function GET() {
       assigneeProgress[name].push(w.progress);
     });
     const topPerformer = Object.entries(assigneeProgress)
-      .map(([name, scores]) => ({
+      .map(([name, scores]: [string, number[]]) => ({
         name,
         avg: Math.round(
           scores.reduce((a: number, b: number) => a + b, 0) / scores.length,
         ),
       }))
-      .sort((a, b) => b.avg - a.avg)[0];
+      .sort((a: { avg: number }, b: { avg: number }) => b.avg - a.avg)[0];
 
     // Workload distribution
     const activeCounts: Record<string, number> = {};
@@ -85,7 +85,7 @@ export async function GET() {
       activeCounts[name] = (activeCounts[name] || 0) + 1;
     });
     const overloaded = Object.entries(activeCounts).sort(
-      (a, b) => b[1] - a[1],
+      (a: [string, number], b: [string, number]) => b[1] - a[1],
     )[0];
 
     // Build recommendations
@@ -93,7 +93,7 @@ export async function GET() {
     if (blocked > 0) {
       const blockedTitles = workflows
         .filter((w: WorkflowWithRelations) => w.stage === Stage.BLOCKED)
-        .map((w) => w.title)
+        .map((w: WorkflowWithRelations) => w.title)
         .join(", ");
       recommendations.push(
         `🔴 ${blocked} workflow${blocked > 1 ? "s" : ""} blocked: ${blockedTitles.slice(0, 80)}`,

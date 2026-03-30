@@ -47,7 +47,10 @@ export async function GET() {
     const efficiency =
       active.length > 0
         ? Math.round(
-            active.reduce((sum, w) => sum + w.progress, 0) / active.length,
+            active.reduce(
+              (sum: number, w: WorkflowWithRelations) => sum + w.progress,
+              0,
+            ) / active.length,
           )
         : 100;
 
@@ -69,7 +72,9 @@ export async function GET() {
     const topPerformer = Object.entries(assigneeProgress)
       .map(([name, scores]) => ({
         name,
-        avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+        avg: Math.round(
+          scores.reduce((a: number, b: number) => a + b, 0) / scores.length,
+        ),
       }))
       .sort((a, b) => b.avg - a.avg)[0];
 

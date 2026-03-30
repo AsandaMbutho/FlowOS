@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { Priority, Stage } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+const { Priority, Stage } = PrismaClient;
 
 // GET /api/workflows — fetch all workflows with assignee
 export async function GET(request: Request) {

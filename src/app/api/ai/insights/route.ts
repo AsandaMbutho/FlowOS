@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { Stage } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+const { Stage } = PrismaClient;
 
 // GET /api/ai/insights — compute real insights from DB
 export async function GET() {

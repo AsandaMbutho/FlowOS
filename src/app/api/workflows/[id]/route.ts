@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { Priority, Stage } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { createNotification } from "@/lib/notifications";
+
+const { Priority, Stage } = PrismaClient;
 
 const STAGE_LABELS: Record<Stage, string> = {
   TODO: "To Do",

@@ -4,6 +4,24 @@ import { PrismaClient } from "@prisma/client";
 
 const { Stage } = PrismaClient;
 
+// Define the type for workflow with relations
+type WorkflowWithRelations = {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  stage: string;
+  assigneeId: string | null;
+  team: string | null;
+  tags: string;
+  dueDate: Date | null;
+  progress: number;
+  createdAt: Date;
+  updatedAt: Date;
+  assignee: { name: string | null } | null;
+  tasks: { completed: boolean }[];
+};
+
 // GET /api/ai/insights — compute real insights from DB
 export async function GET() {
   try {
@@ -15,12 +33,17 @@ export async function GET() {
     });
 
     const total = workflows.length;
-    const blocked = workflows.filter((w) => w.stage === Stage.BLOCKED).length;
+    const blocked = workflows.filter(
+      (w: WorkflowWithRelations) => w.stage === Stage.BLOCKED,
+    ).length;
     const overdue = workflows.filter(
-      (w) => w.dueDate && w.dueDate < new Date() && w.stage !== Stage.DONE,
+      (w: WorkflowWithRelations) =>
+        w.dueDate && w.dueDate < new Date() && w.stage !== Stage.DONE,
     ).length;
     const atRisk = blocked + overdue;
-    const active = workflows.filter((w) => w.stage !== Stage.DONE);
+    const active = workflows.filter(
+      (w: WorkflowWithRelations) => w.stage !== Stage.DONE,
+    );
     const efficiency =
       active.length > 0
         ? Math.round(
@@ -29,7 +52,7 @@ export async function GET() {
         : 100;
 
     const reviewCount = workflows.filter(
-      (w) => w.stage === Stage.REVIEW,
+      (w: WorkflowWithRelations) => w.stage === Stage.REVIEW,
     ).length;
     const bottlenecks =
       (reviewCount >= 2 ? 1 : 0) +
@@ -38,7 +61,7 @@ export async function GET() {
 
     // Top performer
     const assigneeProgress: Record<string, number[]> = {};
-    workflows.forEach((w) => {
+    workflows.forEach((w: WorkflowWithRelations) => {
       const name = w.assignee?.name ?? "Unknown";
       if (!assigneeProgress[name]) assigneeProgress[name] = [];
       assigneeProgress[name].push(w.progress);
@@ -52,7 +75,7 @@ export async function GET() {
 
     // Workload distribution
     const activeCounts: Record<string, number> = {};
-    active.forEach((w) => {
+    active.forEach((w: WorkflowWithRelations) => {
       const name = w.assignee?.name ?? "Unknown";
       activeCounts[name] = (activeCounts[name] || 0) + 1;
     });
@@ -64,7 +87,7 @@ export async function GET() {
     const recommendations: string[] = [];
     if (blocked > 0) {
       const blockedTitles = workflows
-        .filter((w) => w.stage === Stage.BLOCKED)
+        .filter((w: WorkflowWithRelations) => w.stage === Stage.BLOCKED)
         .map((w) => w.title)
         .join(", ");
       recommendations.push(
@@ -88,7 +111,7 @@ export async function GET() {
     }
 
     const nearDone = workflows.filter(
-      (w) => w.progress >= 80 && w.stage !== Stage.DONE,
+      (w: WorkflowWithRelations) => w.progress >= 80 && w.stage !== Stage.DONE,
     ).length;
 
     return NextResponse.json({

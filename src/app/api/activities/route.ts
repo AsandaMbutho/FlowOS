@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+// Define the type for the activity with relations
+type ActivityWithRelations = {
+  id: string;
+  action: string;
+  details: string | null;
+  createdAt: Date;
+  workflowId: string;
+  user: { name: string | null } | null;
+  workflow: { id: string; title: string } | null;
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,7 +26,8 @@ export async function GET(request: Request) {
       },
     });
 
-    const formatted = activities.map((a) => ({
+    // Add explicit type for the map parameter
+    const formatted = activities.map((a: ActivityWithRelations) => ({
       id: a.id,
       user: a.user?.name ?? "System",
       action: detectAction(a.action),

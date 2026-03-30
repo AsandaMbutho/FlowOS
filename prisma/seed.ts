@@ -1,4 +1,7 @@
-import { PrismaClient, Priority, Stage, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+// Access enums from PrismaClient
+const { Priority, Stage, Role } = PrismaClient;
 
 const prisma = new PrismaClient();
 
@@ -43,8 +46,6 @@ async function main() {
       role: Role.USER,
     },
   });
-
-  // Lisa and Mike REMOVED
 
   console.log("✅ Users created");
 

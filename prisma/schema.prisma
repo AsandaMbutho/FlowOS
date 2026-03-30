@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS FIRST - before they are used
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Stage {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
+}
+
+enum NotifType {
+  STATUS_CHANGE
+  ASSIGNED
+  TASK_COMPLETED
+  OVERDUE
+  MENTION
+}
+
+// MODELS AFTER ENUMS
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  name          String?
+  avatar        String?
+  password      String?
+  role          Role             @default(USER)
+  workflows     Workflow[]       @relation("UserWorkflows")
+  assignedTasks Task[]           @relation("UserTasks")
+  activities    Activity[]       @relation("UserActivities")
+  comments      Comment[]        @relation("CommentAuthor")
+  mentionedIn   CommentMention[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Workflow {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  priority    Priority   @default(MEDIUM)
+  stage       Stage      @default(TODO)
+  assigneeId  String?
+  assignee    User?      @relation("UserWorkflows", fields: [assigneeId], references: [id])
+  team        String?
+  tags        String
+  dueDate     DateTime?
+  progress    Int        @default(0)
+  tasks       Task[]     @relation("WorkflowTasks")
+  activities  Activity[] @relation("WorkflowActivities")
+  comments    Comment[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  title      String
+  completed  Boolean  @default(false)
+  workflowId String
+  workflow   Workflow @relation("WorkflowTasks", fields: [workflowId], references: [id])
+  assigneeId String?
+  assignee   User?    @relation("UserTasks", fields: [assigneeId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Activity {
+  id         String   @id @default(cuid())
+  action     String
+  details    String?
+  userId     String?
+  user       User?    @relation("UserActivities", fields: [userId], references: [id])
+  workflowId String
+  workflow   Workflow @relation("WorkflowActivities", fields: [workflowId], references: [id])
+  metadata   String?
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  type       NotifType
+  title      String
+  message    String
+  read       Boolean   @default(false)
+  userId     String?
+  workflowId String?
+  createdAt  DateTime  @default(now())
+  
+  // Email tracking fields
+  emailSent    Boolean   @default(false)
+  emailSentAt  DateTime?
+  emailError   String?
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  body       String
+  authorId   String?
+  workflowId String
+  createdAt  DateTime @default(now())
+
+  author   User?    @relation("CommentAuthor", fields: [authorId], references: [id])
+  workflow Workflow @relation(fields: [workflowId], references: [id])
+
+  mentions CommentMention[]
+}
+
+model CommentMention {
+  id        String @id @default(cuid())
+  commentId String
+  userId    String
+
+  comment Comment @relation(fields: [commentId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
+enum Role {
+  ADMIN
+  MANAGER  // This will be the supervisor role
+  USER     // This will be regular employees
+}

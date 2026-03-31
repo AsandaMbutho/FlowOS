@@ -1,99 +1,73 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PrismaClient } from "@prisma/client";
+import { Stage } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-const { Stage } = PrismaClient;
+type WorkflowWithRelations = Prisma.WorkflowGetPayload<{
+  include: {
+    assignee: { select: { name: true } };
+    tasks: { select: { completed: true } };
+  };
+}>;
 
-// Define the type for workflow with relations
-type WorkflowWithRelations = {
-  id: string;
-  title: string;
-  description: string | null;
-  priority: string;
-  stage: string;
-  assigneeId: string | null;
-  team: string | null;
-  tags: string;
-  dueDate: Date | null;
-  progress: number;
-  createdAt: Date;
-  updatedAt: Date;
-  assignee: { name: string | null } | null;
-  tasks: { completed: boolean }[];
-};
-
-// GET /api/ai/insights — compute real insights from DB
 export async function GET() {
   try {
-    const workflows = (await db.workflow.findMany({
+    const workflows = await db.workflow.findMany({
       include: {
         assignee: { select: { name: true } },
         tasks: { select: { completed: true } },
       },
-    })) as WorkflowWithRelations[];
+    });
 
     const total = workflows.length;
-    const blocked = workflows.filter(
-      (w: WorkflowWithRelations) => w.stage === Stage.BLOCKED,
-    ).length;
+    const blocked = workflows.filter((w) => w.stage === Stage.BLOCKED).length;
     const overdue = workflows.filter(
-      (w: WorkflowWithRelations) =>
-        w.dueDate && w.dueDate < new Date() && w.stage !== Stage.DONE,
+      (w) => w.dueDate && w.dueDate < new Date() && w.stage !== Stage.DONE,
     ).length;
     const atRisk = blocked + overdue;
-    const active = workflows.filter(
-      (w: WorkflowWithRelations) => w.stage !== Stage.DONE,
-    );
+    const active = workflows.filter((w) => w.stage !== Stage.DONE);
     const efficiency =
       active.length > 0
         ? Math.round(
-            active.reduce(
-              (sum: number, w: WorkflowWithRelations) => sum + w.progress,
-              0,
-            ) / active.length,
+            active.reduce((sum, w) => sum + w.progress, 0) / active.length,
           )
         : 100;
 
     const reviewCount = workflows.filter(
-      (w: WorkflowWithRelations) => w.stage === Stage.REVIEW,
+      (w) => w.stage === Stage.REVIEW,
     ).length;
     const bottlenecks =
       (reviewCount >= 2 ? 1 : 0) +
       (blocked >= 1 ? 1 : 0) +
       (overdue >= 1 ? 1 : 0);
 
-    // Top performer
     const assigneeProgress: Record<string, number[]> = {};
-    workflows.forEach((w: WorkflowWithRelations) => {
+    workflows.forEach((w) => {
       const name = w.assignee?.name ?? "Unknown";
       if (!assigneeProgress[name]) assigneeProgress[name] = [];
       assigneeProgress[name].push(w.progress);
     });
     const topPerformer = Object.entries(assigneeProgress)
-      .map(([name, scores]: [string, number[]]) => ({
+      .map(([name, scores]) => ({
         name,
-        avg: Math.round(
-          scores.reduce((a: number, b: number) => a + b, 0) / scores.length,
-        ),
+        avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
       }))
-      .sort((a: { avg: number }, b: { avg: number }) => b.avg - a.avg)[0];
+      .sort((a, b) => b.avg - a.avg)[0];
 
-    // Workload distribution
     const activeCounts: Record<string, number> = {};
-    active.forEach((w: WorkflowWithRelations) => {
+    active.forEach((w) => {
       const name = w.assignee?.name ?? "Unknown";
       activeCounts[name] = (activeCounts[name] || 0) + 1;
     });
     const overloaded = Object.entries(activeCounts).sort(
-      (a: [string, number], b: [string, number]) => b[1] - a[1],
+      (a, b) => b[1] - a[1],
     )[0];
 
-    // Build recommendations
     const recommendations: string[] = [];
     if (blocked > 0) {
       const blockedTitles = workflows
-        .filter((w: WorkflowWithRelations) => w.stage === Stage.BLOCKED)
-        .map((w: WorkflowWithRelations) => w.title)
+        .filter((w) => w.stage === Stage.BLOCKED)
+        .map((w) => w.title)
         .join(", ");
       recommendations.push(
         `🔴 ${blocked} workflow${blocked > 1 ? "s" : ""} blocked: ${blockedTitles.slice(0, 80)}`,
@@ -116,7 +90,7 @@ export async function GET() {
     }
 
     const nearDone = workflows.filter(
-      (w: WorkflowWithRelations) => w.progress >= 80 && w.stage !== Stage.DONE,
+      (w) => w.progress >= 80 && w.stage !== Stage.DONE,
     ).length;
 
     return NextResponse.json({

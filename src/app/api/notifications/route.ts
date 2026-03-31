@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PrismaClient } from "@prisma/client";
+import { NotifType } from "@prisma/client";
 import { checkOverdueWorkflows } from "@/lib/notifications";
-
-const { NotifType } = PrismaClient;
 
 export async function GET() {
   try {

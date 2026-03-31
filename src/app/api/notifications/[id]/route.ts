@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PrismaClient } from "@prisma/client";
+import { NotifType } from "@prisma/client";
 import { checkOverdueWorkflows } from "@/lib/notifications";
 
-const { NotifType } = PrismaClient;
-
-// GET /api/notifications
 export async function GET() {
   try {
-    // Check for overdue workflows on each fetch (lightweight)
     await checkOverdueWorkflows();
-
     const notifications = await db.notification.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -25,7 +20,6 @@ export async function GET() {
   }
 }
 
-// POST /api/notifications
 export async function POST(request: Request) {
   try {
     const { type, title, message, userId, workflowId } = await request.json();
@@ -48,7 +42,6 @@ export async function POST(request: Request) {
   }
 }
 
-// PATCH /api/notifications — mark all as read
 export async function PATCH() {
   try {
     await db.notification.updateMany({ data: { read: true } });
@@ -61,7 +54,6 @@ export async function PATCH() {
   }
 }
 
-// DELETE /api/notifications — clear all
 export async function DELETE() {
   try {
     await db.notification.deleteMany({});

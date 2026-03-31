@@ -15,6 +15,9 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
+  FileText,
+  FileSpreadsheet,
+  File,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,14 +26,20 @@ const DATE_OPTIONS = ["Today", "This Week", "This Month", "Last 30 Days"];
 
 interface Workflow {
   id: string;
+  title: string;
   status: string;
+  priority: string;
+  team: string;
   dueDate: string;
+  progress: number;
   tasksLeft: number;
+  assignee: { name: string };
 }
 
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState("Today");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [myWorkflows, setMyWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,6 +64,94 @@ export default function DashboardPage() {
   const myOverdue = myWorkflows.filter((w) => w.dueDate === "Overdue").length;
   const myTasksLeft = myWorkflows.reduce((acc, w) => acc + w.tasksLeft, 0);
 
+  // ── Export helpers ────────────────────────────────────────────────────────
+
+  async function fetchAllWorkflows(): Promise<Workflow[]> {
+    const res = await fetch("/api/workflows");
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  async function exportCSV() {
+    const workflows = await fetchAllWorkflows();
+    const headers = [
+      "Title",
+      "Status",
+      "Priority",
+      "Team",
+      "Assignee",
+      "Progress",
+      "Due Date",
+      "Tasks Left",
+    ];
+    const rows = workflows.map((w) => [
+      w.title,
+      w.status,
+      w.priority,
+      w.team,
+      w.assignee?.name ?? "Unassigned",
+      `${w.progress}%`,
+      w.dueDate,
+      w.tasksLeft,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    download("flowos-workflows.csv", "text/csv", csv);
+    setShowExportMenu(false);
+  }
+
+  async function exportJSON() {
+    const workflows = await fetchAllWorkflows();
+    const json = JSON.stringify(workflows, null, 2);
+    download("flowos-workflows.json", "application/json", json);
+    setShowExportMenu(false);
+  }
+
+  async function exportExcel() {
+    const workflows = await fetchAllWorkflows();
+    const headers = [
+      "Title",
+      "Status",
+      "Priority",
+      "Team",
+      "Assignee",
+      "Progress",
+      "Due Date",
+      "Tasks Left",
+    ];
+    const rows = workflows.map((w) => [
+      w.title,
+      w.status,
+      w.priority,
+      w.team,
+      w.assignee?.name ?? "Unassigned",
+      `${w.progress}%`,
+      w.dueDate,
+      w.tasksLeft,
+    ]);
+
+    // Build a simple HTML table that Excel can open
+    const table = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+      <head><meta charset="UTF-8"></head>
+      <body><table>
+        <tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>
+        ${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}
+      </table></body></html>
+    `;
+    download("flowos-workflows.xls", "application/vnd.ms-excel", table);
+    setShowExportMenu(false);
+  }
+
+  function download(filename: string, type: string, content: string) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -67,6 +164,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {/* Date picker */}
           <div className="relative">
             <Button
               variant="outline"
@@ -101,9 +199,45 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Download className="w-4 h-4" /> Export
-          </Button>
+
+          {/* Export menu */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+            >
+              <Download className="w-4 h-4" /> Export
+              <ChevronDown
+                className={`w-3 h-3 transition-transform ${showExportMenu ? "rotate-180" : ""}`}
+              />
+            </Button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-1 bg-white border rounded-xl shadow-lg z-10 py-1 min-w-[170px]">
+                <button
+                  onClick={exportCSV}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4 text-green-600" /> Export as CSV
+                </button>
+                <button
+                  onClick={exportExcel}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-blue-600" /> Export
+                  as Excel
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                >
+                  <File className="w-4 h-4 text-orange-500" /> Export as JSON
+                </button>
+              </div>
+            )}
+          </div>
+
           <Link href="/workflows">
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5">
               <Plus className="w-4 h-4" /> New Workflow

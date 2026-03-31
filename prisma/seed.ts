@@ -1,20 +1,15 @@
-import { PrismaClient } from "@prisma/client";
-
-// Access enums from PrismaClient
-const { Priority, Stage, Role } = PrismaClient;
+import { PrismaClient, Priority, Stage, Role } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // ── Clean existing data ──────────────────────────────────────────────────
   await prisma.activity.deleteMany();
   await prisma.task.deleteMany();
   await prisma.workflow.deleteMany();
   await prisma.user.deleteMany();
 
-  // ── Users ────────────────────────────────────────────────────────────────
   const asanda = await prisma.user.create({
     data: {
       email: "asanda@flowos.com",
@@ -49,7 +44,6 @@ async function main() {
 
   console.log("✅ Users created");
 
-  // ── Workflows ─────────────────────────────────────────────────────────────
   const w1 = await prisma.workflow.create({
     data: {
       title: "Client Onboarding – TechCorp",
@@ -60,7 +54,7 @@ async function main() {
       tags: JSON.stringify(["client", "onboarding"]),
       progress: 45,
       assigneeId: asanda.id,
-      dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // tomorrow
+      dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -74,7 +68,7 @@ async function main() {
       tags: JSON.stringify(["database", "critical"]),
       progress: 30,
       assigneeId: themba.id,
-      dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // overdue
+      dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -88,7 +82,7 @@ async function main() {
       tags: JSON.stringify(["design", "ui", "mobile"]),
       progress: 80,
       assigneeId: asanda.id,
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // next week
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -102,7 +96,7 @@ async function main() {
       tags: JSON.stringify(["backend", "api", "payments"]),
       progress: 55,
       assigneeId: sizwe.id,
-      dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // friday
+      dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -164,10 +158,8 @@ async function main() {
 
   console.log("✅ Workflows created");
 
-  // ── Tasks ─────────────────────────────────────────────────────────────────
   await prisma.task.createMany({
     data: [
-      // Workflow 1 tasks
       {
         title: "Set up onboarding portal",
         workflowId: w1.id,
@@ -198,7 +190,6 @@ async function main() {
         assigneeId: asanda.id,
         completed: false,
       },
-      // Workflow 2 tasks
       {
         title: "Backup existing database",
         workflowId: w2.id,
@@ -229,7 +220,6 @@ async function main() {
         assigneeId: themba.id,
         completed: false,
       },
-      // Workflow 3 tasks
       {
         title: "Wireframes approved",
         workflowId: w3.id,
@@ -242,7 +232,6 @@ async function main() {
         assigneeId: asanda.id,
         completed: false,
       },
-      // Workflow 4 tasks
       {
         title: "Stripe account setup",
         workflowId: w4.id,
@@ -261,7 +250,6 @@ async function main() {
         assigneeId: sizwe.id,
         completed: false,
       },
-      // Workflow 8 tasks
       {
         title: "Design system components",
         workflowId: w8.id,
@@ -279,7 +267,6 @@ async function main() {
 
   console.log("✅ Tasks created");
 
-  // ── Activities ────────────────────────────────────────────────────────────
   await prisma.activity.createMany({
     data: [
       {

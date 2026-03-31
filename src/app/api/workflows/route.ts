@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PrismaClient } from "@prisma/client";
-
-const { Priority, Stage } = PrismaClient;
+import { Priority, Stage } from "@prisma/client";
 
 // GET /api/workflows — fetch all workflows with assignee
 export async function GET(request: Request) {
@@ -27,7 +25,6 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Shape response to match frontend expectations
     const shaped = workflows.map((w) => ({
       id: w.id,
       title: w.title,
@@ -81,7 +78,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
-    // Find assignee by name
     const assignee = assigneeName
       ? await db.user.findFirst({ where: { name: assigneeName } })
       : null;
@@ -104,7 +100,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Log activity
     if (assignee) {
       await db.activity.create({
         data: {
@@ -151,8 +146,6 @@ export async function POST(request: Request) {
     );
   }
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function stageToStatus(stage: Stage): string {
   const map: Record<Stage, string> = {

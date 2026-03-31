@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-import { db } from "@/lib/db";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Fixed: was apikey, now apiKey
-});
 
 export async function POST(request: Request) {
   try {
     const { workflowId } = await request.json();
 
-    // For now, return mock data
     return NextResponse.json({
       prediction:
         "Based on current progress, this workflow will be completed in approximately 3 days.",

@@ -64,12 +64,20 @@ export default function DashboardPage() {
   const myOverdue = myWorkflows.filter((w) => w.dueDate === "Overdue").length;
   const myTasksLeft = myWorkflows.reduce((acc, w) => acc + w.tasksLeft, 0);
 
-  // ── Export helpers ────────────────────────────────────────────────────────
-
   async function fetchAllWorkflows(): Promise<Workflow[]> {
     const res = await fetch("/api/workflows");
     const data = await res.json();
     return Array.isArray(data) ? data : [];
+  }
+
+  function download(filename: string, type: string, content: string) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function exportCSV() {
@@ -99,13 +107,6 @@ export default function DashboardPage() {
     setShowExportMenu(false);
   }
 
-  async function exportJSON() {
-    const workflows = await fetchAllWorkflows();
-    const json = JSON.stringify(workflows, null, 2);
-    download("flowos-workflows.json", "application/json", json);
-    setShowExportMenu(false);
-  }
-
   async function exportExcel() {
     const workflows = await fetchAllWorkflows();
     const headers = [
@@ -128,8 +129,6 @@ export default function DashboardPage() {
       w.dueDate,
       w.tasksLeft,
     ]);
-
-    // Build a simple HTML table that Excel can open
     const table = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
       <head><meta charset="UTF-8"></head>
@@ -142,14 +141,109 @@ export default function DashboardPage() {
     setShowExportMenu(false);
   }
 
-  function download(filename: string, type: string, content: string) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  async function exportJSON() {
+    const workflows = await fetchAllWorkflows();
+    download(
+      "flowos-workflows.json",
+      "application/json",
+      JSON.stringify(workflows, null, 2),
+    );
+    setShowExportMenu(false);
+  }
+
+  async function exportPDF() {
+    const workflows = await fetchAllWorkflows();
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+
+    const doc = new jsPDF({ orientation: "landscape" });
+
+    // Header
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, 297, 20, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("FlowOS — Workflow Report", 14, 13);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-ZA", { dateStyle: "full" })}`,
+      200,
+      13,
+    );
+
+    // Summary stats
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Summary", 14, 30);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    const total = workflows.length;
+    const completed = workflows.filter((w) => w.status === "Completed").length;
+    const inProgress = workflows.filter(
+      (w) => w.status === "In Progress",
+    ).length;
+    const overdue = workflows.filter((w) => w.dueDate === "Overdue").length;
+    doc.text(
+      `Total Workflows: ${total}   |   Completed: ${completed}   |   In Progress: ${inProgress}   |   Overdue: ${overdue}`,
+      14,
+      37,
+    );
+
+    // Table
+    autoTable(doc, {
+      startY: 44,
+      head: [
+        [
+          "Title",
+          "Status",
+          "Priority",
+          "Team",
+          "Assignee",
+          "Progress",
+          "Due Date",
+          "Tasks Left",
+        ],
+      ],
+      body: workflows.map((w) => [
+        w.title,
+        w.status,
+        w.priority,
+        w.team,
+        w.assignee?.name ?? "Unassigned",
+        `${w.progress}%`,
+        w.dueDate,
+        w.tasksLeft,
+      ]),
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: 255,
+        fontStyle: "bold",
+        fontSize: 9,
+      },
+      bodyStyles: { fontSize: 8, textColor: [50, 50, 50] },
+      alternateRowStyles: { fillColor: [245, 247, 255] },
+      columnStyles: { 0: { cellWidth: 60 } },
+      styles: { overflow: "linebreak", cellPadding: 3 },
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Media on Africa — FlowOS | Page ${i} of ${pageCount}`,
+        14,
+        doc.internal.pageSize.height - 8,
+      );
+    }
+
+    doc.save("flowos-workflows.pdf");
+    setShowExportMenu(false);
   }
 
   return (
@@ -214,7 +308,7 @@ export default function DashboardPage() {
               />
             </Button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-1 bg-white border rounded-xl shadow-lg z-10 py-1 min-w-[170px]">
+              <div className="absolute right-0 mt-1 bg-white border rounded-xl shadow-lg z-10 py-1 min-w-[180px]">
                 <button
                   onClick={exportCSV}
                   className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
@@ -227,6 +321,12 @@ export default function DashboardPage() {
                 >
                   <FileSpreadsheet className="w-4 h-4 text-blue-600" /> Export
                   as Excel
+                </button>
+                <button
+                  onClick={exportPDF}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4 text-red-500" /> Export as PDF
                 </button>
                 <button
                   onClick={exportJSON}

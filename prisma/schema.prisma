@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ENUMS FIRST - before they are used
 enum Role {
   ADMIN
   MANAGER
@@ -36,7 +35,6 @@ enum NotifType {
   MENTION
 }
 
-// MODELS AFTER ENUMS
 model User {
   id            String           @id @default(cuid())
   email         String           @unique
@@ -97,16 +95,14 @@ model Activity {
 }
 
 model Notification {
-  id         String    @id @default(cuid())
-  type       NotifType
-  title      String
-  message    String
-  read       Boolean   @default(false)
-  userId     String?
-  workflowId String?
-  createdAt  DateTime  @default(now())
-  
-  // Email tracking fields
+  id           String    @id @default(cuid())
+  type         NotifType
+  title        String
+  message      String
+  read         Boolean   @default(false)
+  userId       String?
+  workflowId   String?
+  createdAt    DateTime  @default(now())
   emailSent    Boolean   @default(false)
   emailSentAt  DateTime?
   emailError   String?
@@ -132,9 +128,4 @@ model CommentMention {
 
   comment Comment @relation(fields: [commentId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
-}
-enum Role {
-  ADMIN
-  MANAGER  // This will be the supervisor role
-  USER     // This will be regular employees
 }

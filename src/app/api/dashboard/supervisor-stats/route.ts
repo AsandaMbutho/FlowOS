@@ -2,12 +2,24 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
+
+type WorkflowWithAssignee = Prisma.WorkflowGetPayload<{
+  include: { assignee: true };
+}>;
+
+type UserWithWorkflows = Prisma.UserGetPayload<{
+  include: { workflows: true };
+}>;
+
+type ActivityWithRelations = Prisma.ActivityGetPayload<{
+  include: { user: true; workflow: true };
+}>;
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    // Only supervisors (MANAGER/ADMIN) can access
     if (
       !session ||
       (session.user.role !== "MANAGER" && session.user.role !== "ADMIN")
@@ -15,14 +27,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get all workflows with assignees
-    const workflows = await prisma.workflow.findMany({
+    const workflows: WorkflowWithAssignee[] = await prisma.workflow.findMany({
       include: {
         assignee: true,
       },
     });
 
-    // Calculate stats
     const totalWorkflows = workflows.length;
     const completedWorkflows = workflows.filter(
       (w) => w.stage === "DONE",
@@ -34,8 +44,7 @@ export async function GET() {
       (w) => w.dueDate && w.dueDate < new Date() && w.stage !== "DONE",
     ).length;
 
-    // Team progress by member
-    const teamProgress = await prisma.user.findMany({
+    const teamProgress: UserWithWorkflows[] = await prisma.user.findMany({
       where: {
         workflows: {
           some: {},
@@ -46,7 +55,7 @@ export async function GET() {
       },
     });
 
-    const teamProgressData = teamProgress.map((user) => ({
+    const teamProgressData = teamProgress.map((user: UserWithWorkflows) => ({
       name: user.name || user.email.split("@")[0],
       progress:
         user.workflows.length > 0
@@ -57,7 +66,6 @@ export async function GET() {
           : 0,
     }));
 
-    // Status distribution
     const statusDistribution = [
       {
         name: "To Do",
@@ -81,15 +89,15 @@ export async function GET() {
       },
     ].filter((item) => item.value > 0);
 
-    // Recent activities
-    const recentActivities = await prisma.activity.findMany({
-      take: 10,
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: true,
-        workflow: true,
-      },
-    });
+    const recentActivities: ActivityWithRelations[] =
+      await prisma.activity.findMany({
+        take: 10,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: true,
+          workflow: true,
+        },
+      });
 
     const formattedActivities = recentActivities.map((activity) => ({
       id: activity.id,

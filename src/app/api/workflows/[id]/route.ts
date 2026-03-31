@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { PrismaClient } from "@prisma/client";
+import { Priority, Stage } from "@prisma/client";
 import { createNotification } from "@/lib/notifications";
-
-const { Priority, Stage } = PrismaClient;
 
 const STAGE_LABELS: Record<Stage, string> = {
   TODO: "To Do",
@@ -13,14 +11,12 @@ const STAGE_LABELS: Record<Stage, string> = {
   BLOCKED: "Blocked",
 };
 
-// GET /api/workflows/[id]
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-
     const workflow = await db.workflow.findUnique({
       where: { id },
       include: {
@@ -33,14 +29,12 @@ export async function GET(
         },
       },
     });
-
     if (!workflow) {
       return NextResponse.json(
         { error: "Workflow not found" },
         { status: 404 },
       );
     }
-
     return NextResponse.json(workflow);
   } catch (error) {
     console.error("GET /api/workflows/[id] error:", error);
@@ -51,7 +45,6 @@ export async function GET(
   }
 }
 
-// PATCH /api/workflows/[id]
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -136,7 +129,6 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/workflows/[id]
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },

@@ -11,6 +11,29 @@ interface Activity {
   createdAt: string;
 }
 
+function formatDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "Just now";
+
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+
+    return date.toLocaleDateString("en-ZA", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "Just now";
+  }
+}
+
 export function ActivityFeed() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,9 +41,7 @@ export function ActivityFeed() {
   useEffect(() => {
     fetch("/api/activities?limit=10")
       .then((res) => res.json())
-      .then((data) => {
-        setActivities(Array.isArray(data) ? data : []);
-      })
+      .then((data) => setActivities(Array.isArray(data) ? data : []))
       .catch(() => setActivities([]))
       .finally(() => setLoading(false));
   }, []);
@@ -61,7 +82,7 @@ export function ActivityFeed() {
                   </span>
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {new Date(activity.createdAt).toLocaleString()}
+                  {formatDate(activity.createdAt)}
                 </p>
               </div>
             </div>

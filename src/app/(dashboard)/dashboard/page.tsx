@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { PipelineView } from "@/components/dashboard/pipeline-view";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
@@ -21,7 +22,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const CURRENT_USER = "Asanda";
 const DATE_OPTIONS = ["Today", "This Week", "This Month", "Last 30 Days"];
 
 interface Workflow {
@@ -37,6 +37,9 @@ interface Workflow {
 }
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const currentUser = session?.user?.name ?? "";
+
   const [dateRange, setDateRange] = useState("Today");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -48,12 +51,13 @@ export default function DashboardPage() {
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   useEffect(() => {
-    fetch(`/api/workflows?assignee=${CURRENT_USER}`)
+    if (!currentUser) return;
+    fetch(`/api/workflows?assignee=${encodeURIComponent(currentUser)}`)
       .then((r) => r.json())
       .then((data) => setMyWorkflows(Array.isArray(data) ? data : []))
       .catch(() => setMyWorkflows([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentUser]);
 
   const myCompleted = myWorkflows.filter(
     (w) => w.status === "Completed",
@@ -157,8 +161,6 @@ export default function DashboardPage() {
     const autoTable = (await import("jspdf-autotable")).default;
 
     const doc = new jsPDF({ orientation: "landscape" });
-
-    // Header
     doc.setFillColor(37, 99, 235);
     doc.rect(0, 0, 297, 20, "F");
     doc.setTextColor(255, 255, 255);
@@ -173,7 +175,6 @@ export default function DashboardPage() {
       13,
     );
 
-    // Summary stats
     doc.setTextColor(50, 50, 50);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -187,12 +188,11 @@ export default function DashboardPage() {
     ).length;
     const overdue = workflows.filter((w) => w.dueDate === "Overdue").length;
     doc.text(
-      `Total Workflows: ${total}   |   Completed: ${completed}   |   In Progress: ${inProgress}   |   Overdue: ${overdue}`,
+      `Total: ${total}   |   Completed: ${completed}   |   In Progress: ${inProgress}   |   Overdue: ${overdue}`,
       14,
       37,
     );
 
-    // Table
     autoTable(doc, {
       startY: 44,
       head: [
@@ -229,7 +229,6 @@ export default function DashboardPage() {
       styles: { overflow: "linebreak", cellPadding: 3 },
     });
 
-    // Footer
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -246,19 +245,26 @@ export default function DashboardPage() {
     setShowExportMenu(false);
   }
 
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {greeting}, {CURRENT_USER} 👋
+            {greeting}, {currentUser} 👋
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
             Here's a summary of your workflows and team activity.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* Date picker */}
           <div className="relative">
             <Button
               variant="outline"
@@ -294,7 +300,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Export menu */}
           <div className="relative">
             <Button
               variant="outline"

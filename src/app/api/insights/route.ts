@@ -48,7 +48,8 @@ export async function GET() {
         dueDateStr = w.dueDate;
       }
 
-      return `- "${w.title || w.name || "Unnamed"}" | Status: ${w.status || "Unknown"} | Assignee: ${assigneeName} | Progress: ${w.progress ?? 0}% | Due: ${dueDateStr}`;
+      // FIXED: Changed w.name to w.title (workflows have title, not name)
+      return `- "${w.title || "Unnamed"}" | Status: ${w.stage || "Unknown"} | Assignee: ${assigneeName} | Progress: ${w.progress ?? 0}% | Due: ${dueDateStr}`;
     });
 
     const workflowText = workflowSummaries.join("\n");
@@ -56,7 +57,7 @@ export async function GET() {
     console.log("Sending workflows to Anthropic AI...");
 
     const message = await anthropic.messages.create({
-      model: "claude-opus-4-5",
+      model: "claude-3-5-haiku-20241022",
       max_tokens: 512,
       messages: [
         {

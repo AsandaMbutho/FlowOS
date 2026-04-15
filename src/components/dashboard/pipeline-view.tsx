@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 interface Workflow {
   id: string;
@@ -12,11 +13,13 @@ interface Workflow {
 }
 
 export function PipelineView() {
+  const { data: session } = useSession();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/workflows?assignee=Asanda")
+    // Fetch ALL workflows (no assignee filter)
+    fetch("/api/workflows")
       .then((res) => res.json())
       .then((data) => {
         setWorkflows(Array.isArray(data) ? data : []);
@@ -38,10 +41,12 @@ export function PipelineView() {
     );
   }
 
-  const getStatusColor = (stage: string) => {
+  const getStatusColor = (stage: string, progress: number) => {
+    // Show completed styling only when progress is 100%
+    if (progress === 100) {
+      return "bg-green-100 text-green-600";
+    }
     switch (stage) {
-      case "DONE":
-        return "bg-green-100 text-green-600";
       case "IN_PROGRESS":
         return "bg-blue-100 text-blue-600";
       case "BLOCKED":
@@ -51,14 +56,16 @@ export function PipelineView() {
     }
   };
 
-  const getStageText = (stage: string) => {
+  const getStageText = (stage: string, progress: number) => {
+    // Show "Completed" only when progress is 100%
+    if (progress === 100) {
+      return "Completed";
+    }
     switch (stage) {
       case "IN_PROGRESS":
         return "In Progress";
-      case "DONE":
-        return "Completed";
       default:
-        return stage;
+        return stage || "To Do";
     }
   };
 
@@ -80,9 +87,9 @@ export function PipelineView() {
                     👤 {workflow.assignee?.name || "Unassigned"}
                   </span>
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(workflow.stage)}`}
+                    className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(workflow.stage, workflow.progress)}`}
                   >
-                    {getStageText(workflow.stage)}
+                    {getStageText(workflow.stage, workflow.progress)}
                   </span>
                 </div>
               </div>
@@ -98,7 +105,7 @@ export function PipelineView() {
         ))}
         {workflows.length === 0 && (
           <div className="p-8 text-center text-gray-500">
-            No workflows assigned to you.
+            No workflows found.
           </div>
         )}
       </div>

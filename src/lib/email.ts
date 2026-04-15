@@ -9,15 +9,28 @@ interface EmailOptions {
 }
 
 // Create transporter based on environment
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: process.env.EMAIL_SECURE === "true",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+let transporter: nodemailer.Transporter | null = null;
+
+// Only create transporter if SMTP is configured
+if (
+  process.env.EMAIL_HOST &&
+  process.env.EMAIL_USER &&
+  process.env.EMAIL_PASSWORD
+) {
+  transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT),
+    secure: process.env.EMAIL_SECURE === "true",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+    // Vercel-specific: shorter timeouts
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
+  });
+}
 
 // Email templates for different notification types
 export const emailTemplates = {
@@ -188,8 +201,15 @@ export const emailTemplates = {
   }),
 };
 
-// Main email sending function
+// Main email sending function with Vercel compatibility
 export async function sendEmail({ to, subject, html, text }: EmailOptions) {
+  // Skip if no transporter configured
+  if (!transporter) {
+    console.log("📧 [NO SMTP] Email would be sent:", { to, subject });
+    console.log("Add EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD to enable email");
+    return { success: true, mock: true };
+  }
+
   try {
     if (
       process.env.NODE_ENV === "development" &&
@@ -203,6 +223,7 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions) {
       return { success: true, mock: true };
     }
 
+    // CRITICAL FOR VERCEL: Must await before returning
     const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to,

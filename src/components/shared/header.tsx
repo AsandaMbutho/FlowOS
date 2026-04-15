@@ -25,6 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -95,7 +97,12 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
+  const { data: session } = useSession();
   const router = useRouter();
+
+  const userName = session?.user?.name || "Team Member";
+  const userEmail = session?.user?.email || "";
+  const userInitial = userName?.charAt(0).toUpperCase() || "T";
 
   // ── Notifications ──────────────────────────────────────────────────────
   const [unreadCount, setUnreadCount] = useState(0);
@@ -177,16 +184,21 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     setResults(null);
     setShowDrop(false);
   };
+
   const navigate = (href: string) => {
     clearSearch();
     router.push(href);
   };
+
   const totalResults = results
     ? results.workflows.length + results.tasks.length + results.comments.length
     : 0;
 
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
+
   return (
-    // ── Header bar: white with navy bottom border ──────────────────────
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-[#0D1B4B]/10 bg-white px-4 md:px-6">
       {/* Mobile menu toggle */}
       <Button
@@ -198,7 +210,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
 
-      {/* Logo — navy background, teal "M" initial vibe */}
+      {/* Logo */}
       <div className="hidden lg:flex items-center gap-2 shrink-0">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0D1B4B] text-white font-bold text-sm">
           F
@@ -384,9 +396,8 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
               className="relative h-8 w-8 rounded-full hover:bg-[#0D1B4B]/5"
             >
               <Avatar className="h-8 w-8">
-                {/* Avatar uses navy-to-teal gradient matching the brand */}
                 <AvatarFallback className="bg-gradient-to-br from-[#0D1B4B] to-[#00C48C] text-white font-semibold">
-                  A
+                  {userInitial}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -394,10 +405,8 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           <DropdownMenuContent align="end" className="border-[#0D1B4B]/10">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span className="text-[#0D1B4B] font-semibold">Asanda</span>
-                <span className="text-xs text-[#4B5563]">
-                  asanda@flowos.com
-                </span>
+                <span className="text-[#0D1B4B] font-semibold">{userName}</span>
+                <span className="text-xs text-[#4B5563]">{userEmail}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-[#0D1B4B]/10" />
@@ -420,7 +429,10 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
               Team
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-[#0D1B4B]/10" />
-            <DropdownMenuItem className="text-red-600 hover:bg-red-50 focus:bg-red-50 cursor-pointer">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 hover:bg-red-50 focus:bg-red-50 cursor-pointer"
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

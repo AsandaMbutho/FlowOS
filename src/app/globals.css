@@ -143,3 +143,363 @@
     @apply bg-background text-foreground;
   }
 }
+@layer components {
+  /* ── Depth & Elevation ──────────────────────────────────────────── */
+
+  /* Card with hover lift effect */
+  .card-depth {
+    @apply bg-card rounded-xl border border-border shadow-sm;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .card-depth:hover {
+    @apply shadow-md;
+    transform: translateY(-2px);
+    border-color: oklch(0.72 0.17 168 / 0.3);
+  }
+
+  /* Stat card with icon area */
+  .stat-card {
+    @apply bg-card rounded-xl p-5 border border-border shadow-sm;
+    transition: all 0.2s ease;
+  }
+
+  .stat-card:hover {
+    @apply shadow-md;
+    transform: translateY(-2px);
+  }
+
+  .stat-icon {
+    @apply w-10 h-10 rounded-lg flex items-center justify-center bg-accent/10;
+    transition: all 0.2s ease;
+  }
+
+  .stat-card:hover .stat-icon {
+    @apply bg-accent/20;
+  }
+
+  /* ── Badges & Status Indicators ──────────────────────────────────── */
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-high {
+    @apply bg-red-100 text-red-700;
+  }
+  .dark .badge-high {
+    @apply bg-red-950 text-red-300;
+  }
+
+  .badge-medium {
+    @apply bg-amber-100 text-amber-700;
+  }
+  .dark .badge-medium {
+    @apply bg-amber-950 text-amber-300;
+  }
+
+  .badge-low {
+    @apply bg-emerald-100 text-emerald-700;
+  }
+  .dark .badge-low {
+    @apply bg-emerald-950 text-emerald-300;
+  }
+
+  .badge-overdue {
+    @apply bg-orange-100 text-orange-700;
+  }
+  .dark .badge-overdue {
+    @apply bg-orange-950 text-orange-300;
+  }
+
+  .badge-completed {
+    @apply bg-gray-100 text-gray-600;
+  }
+  .dark .badge-completed {
+    @apply bg-gray-800 text-gray-400;
+  }
+
+  .badge-progress {
+    @apply bg-teal-100 text-teal-700;
+  }
+  .dark .badge-progress {
+    @apply bg-teal-950 text-teal-300;
+  }
+
+  /* ── Progress Bar (Enhanced) ─────────────────────────────────────── */
+
+  .progress-bar {
+    @apply w-full bg-muted rounded-full h-2 overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply bg-gradient-to-r from-teal-500 to-teal-400 h-full rounded-full;
+    transition: width 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+
+  /* Progress with percentage label */
+  .progress-container {
+    @apply space-y-1.5;
+  }
+
+  .progress-header {
+    @apply flex justify-between text-xs;
+  }
+
+  .progress-label {
+    @apply text-muted-foreground;
+  }
+
+  .progress-value {
+    @apply font-medium text-foreground;
+  }
+
+  /* ── Kanban Column Styles ───────────────────────────────────────── */
+
+  .kanban-column {
+    @apply bg-muted/30 rounded-xl p-3 min-w-[280px] flex flex-col gap-3;
+  }
+
+  .kanban-header {
+    @apply flex justify-between items-center px-1;
+  }
+
+  .kanban-title {
+    @apply flex items-center gap-2;
+  }
+
+  .kanban-dot {
+    @apply w-2.5 h-2.5 rounded-full;
+  }
+
+  .kanban-dot-todo {
+    @apply bg-gray-400;
+  }
+  .kanban-dot-progress {
+    @apply bg-blue-500;
+  }
+  .kanban-dot-review {
+    @apply bg-amber-500;
+  }
+  .kanban-dot-completed {
+    @apply bg-teal-500;
+  }
+  .kanban-dot-blocked {
+    @apply bg-red-500;
+  }
+
+  .kanban-count {
+    @apply bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium;
+  }
+
+  /* Kanban Card */
+  .kanban-card {
+    @apply bg-card rounded-lg p-3 border border-border shadow-sm;
+    transition: all 0.15s ease;
+  }
+
+  .kanban-card:hover {
+    @apply shadow-md border-accent/30;
+    cursor: grab;
+  }
+
+  .kanban-card:active {
+    cursor: grabbing;
+  }
+
+  /* ── Workflow Card (List View) ───────────────────────────────────── */
+
+  .workflow-card {
+    @apply bg-card rounded-xl p-4 border-l-4 border-border shadow-sm;
+    transition: all 0.2s ease;
+  }
+
+  .workflow-card:hover {
+    @apply shadow-md;
+    transform: translateX(2px);
+  }
+
+  /* Priority left border colors */
+  .workflow-card-high {
+    @apply border-l-red-500;
+  }
+  .workflow-card-medium {
+    @apply border-l-amber-500;
+  }
+  .workflow-card-low {
+    @apply border-l-emerald-500;
+  }
+
+  /* ── Quick Filter Pills ─────────────────────────────────────────── */
+
+  .filter-pill {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium transition-all;
+    @apply bg-muted text-muted-foreground hover:bg-muted/80;
+  }
+
+  .filter-pill-active {
+    @apply bg-accent text-accent-foreground shadow-sm;
+  }
+
+  /* ── AI Insights Card ───────────────────────────────────────────── */
+
+  .insights-card {
+    @apply bg-gradient-to-br from-accent/5 to-accent/10 rounded-xl p-5 border border-accent/20;
+  }
+
+  .insights-title {
+    @apply flex items-center gap-2 text-sm font-semibold text-accent-foreground mb-3;
+  }
+
+  .insights-list {
+    @apply space-y-2;
+  }
+
+  .insights-item {
+    @apply flex items-start gap-2 text-sm text-muted-foreground;
+  }
+
+  .insights-bullet {
+    @apply w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0;
+  }
+
+  /* ── Avatar Group ───────────────────────────────────────────────── */
+
+  .avatar-group {
+    @apply flex -space-x-2;
+  }
+
+  .avatar {
+    @apply w-8 h-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-medium;
+  }
+
+  .avatar-sm {
+    @apply w-6 h-6 text-[10px];
+  }
+
+  /* ── Dashboard Header Greeting ──────────────────────────────────── */
+
+  .greeting {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .greeting-wave {
+    @apply inline-block;
+    animation: wave 0.5s ease;
+  }
+
+  @keyframes wave {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(14deg);
+    }
+    75% {
+      transform: rotate(-8deg);
+    }
+  }
+
+  /* ── Empty State ────────────────────────────────────────────────── */
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center py-12 px-4;
+  }
+
+  .empty-icon {
+    @apply w-16 h-16 text-muted-foreground/30 mb-4;
+  }
+
+  .empty-title {
+    @apply text-lg font-medium text-foreground mb-1;
+  }
+
+  .empty-description {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* ── Gradient Text ───────────────────────────────────────────────── */
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  /* ── New Workflow Button ────────────────────────────────────────── */
+
+  .btn-primary {
+    @apply bg-accent text-accent-foreground px-4 py-2 rounded-lg font-medium;
+    @apply hover:bg-accent/90 transition-all shadow-sm hover:shadow-md;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2;
+  }
+
+  .btn-outline {
+    @apply border border-border bg-background px-4 py-2 rounded-lg font-medium;
+    @apply hover:bg-muted transition-all;
+  }
+
+  /* ── Sidebar Active Item Indicator ───────────────────────────────── */
+
+  .sidebar-active {
+    @apply bg-accent/10 text-accent-foreground font-medium border-r-2 border-accent;
+  }
+
+  /* ── Notification Dot ───────────────────────────────────────────── */
+
+  .notification-dot {
+    @apply relative;
+  }
+
+  .notification-dot::after {
+    content: "";
+    @apply absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-background;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent/50;
+  }
+
+  /* Animation utilities */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

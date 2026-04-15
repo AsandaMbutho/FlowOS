@@ -1,233 +1,968 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import {
-  Users,
-  CheckCircle,
-  Clock,
-  AlertCircle,
+  AlertTriangle,
   TrendingUp,
+  Users,
+  Clock,
+  CheckCircle,
+  Zap,
+  UserCheck,
+  UserX,
+  Calendar,
+  Flag,
+  GitBranch,
+  Target,
+  Award,
+  Flame,
+  Activity,
+  PieChart,
+  ArrowRight,
+  Shield,
+  Brain,
+  AlertCircle,
 } from "lucide-react";
 
-interface DashboardStats {
-  totalWorkflows: number;
-  completedWorkflows: number;
-  inProgressWorkflows: number;
-  overdueWorkflows: number;
-  teamProgress: Array<{ name: string; progress: number }>;
-  statusDistribution: Array<{ name: string; value: number }>;
-  recentActivities: Array<{
-    id: string;
-    action: string;
-    userName: string;
-    workflowTitle: string;
-    createdAt: Date;
-  }>;
+interface Workflow {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+  progress: number;
+  createdAt: string;
+  assignee: { name: string; email?: string };
 }
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  message: string;
+  createdAt: string;
+  user: { name: string };
+}
+
+// Supervisor name
+const SUPERVISOR_NAME = "Themba";
 
 export default function SupervisorDashboard() {
   const { data: session } = useSession();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTimeframe, setSelectedTimeframe] = useState("week");
 
   useEffect(() => {
-    fetchStats();
+    async function fetchData() {
+      try {
+        const [workflowsRes, usersRes, activitiesRes] = await Promise.all([
+          fetch("/api/workflows"),
+          fetch("/api/users"),
+          fetch("/api/activities?limit=20"),
+        ]);
+        const workflowsData = await workflowsRes.json();
+        const usersData = await usersRes.json();
+        const activitiesData = await activitiesRes.json();
+        setWorkflows(Array.isArray(workflowsData) ? workflowsData : []);
+        setUsers(Array.isArray(usersData) ? usersData : []);
+        setActivities(Array.isArray(activitiesData) ? activitiesData : []);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch("/api/dashboard/supervisor-stats");
-      const data = await response.json();
-      setStats(data);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    } finally {
-      setLoading(false);
+  // ========== STATISTICS CALCULATIONS ==========
+  const total = workflows.length;
+  const completed = workflows.filter((w) => w.progress === 100).length;
+  const inProgress = workflows.filter(
+    (w) => w.progress > 0 && w.progress < 100,
+  ).length;
+  const notStarted = workflows.filter(
+    (w) => w.progress === 0 || !w.progress,
+  ).length;
+  const avgProgress =
+    total > 0
+      ? Math.round(
+          workflows.reduce((acc, w) => acc + (w.progress || 0), 0) / total,
+        )
+      : 0;
+
+  // Overdue calculation
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const overdue = workflows.filter((w) => {
+    if (w.dueDate && w.progress !== 100) {
+      const dueDate = new Date(w.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today;
     }
+    return false;
+  }).length;
+
+  // Priority distribution
+  const highPriority = workflows.filter(
+    (w) => w.priority === "High" || w.priority === "HIGH",
+  ).length;
+  const mediumPriority = workflows.filter(
+    (w) => w.priority === "Medium" || w.priority === "MEDIUM",
+  ).length;
+  const lowPriority = workflows.filter(
+    (w) => w.priority === "Low" || w.priority === "LOW",
+  ).length;
+
+  // ========== RISK SCORING ==========
+  const workflowsWithRisk = workflows.map((w) => {
+    let risk = 0;
+    if (w.dueDate && new Date(w.dueDate) < new Date()) risk += 40;
+    const daysUntilDue = w.dueDate
+      ? Math.ceil(
+          (new Date(w.dueDate).getTime() - new Date().getTime()) /
+            (1000 * 3600 * 24),
+        )
+      : 30;
+    if (daysUntilDue < 3 && (w.progress || 0) < 30) risk += 30;
+    if (daysUntilDue < 7 && (w.progress || 0) < 60) risk += 15;
+    if (
+      (w.priority === "High" || w.priority === "HIGH") &&
+      (w.progress || 0) < 80
+    )
+      risk += 20;
+    if (w.status === "Blocked") risk += 25;
+    if (
+      w.createdAt &&
+      new Date(w.createdAt) < new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) &&
+      (w.progress || 0) < 50
+    )
+      risk += 15;
+    return { ...w, riskScore: Math.min(risk, 100) };
+  });
+
+  const highRiskWorkflows = workflowsWithRisk.filter((w) => w.riskScore >= 50);
+  const criticalRiskWorkflows = workflowsWithRisk.filter(
+    (w) => w.riskScore >= 75,
+  );
+  const avgRiskScore =
+    total > 0
+      ? Math.round(
+          workflowsWithRisk.reduce((acc, w) => acc + w.riskScore, 0) / total,
+        )
+      : 0;
+
+  // ========== TEAM CAPACITY ANALYSIS ==========
+  const workloadByUser: Record<
+    string,
+    { count: number; workflows: string[]; avgProgress: number }
+  > = {};
+  workflows.forEach((w) => {
+    const name = w.assignee?.name || "Unassigned";
+    if (!workloadByUser[name]) {
+      workloadByUser[name] = { count: 0, workflows: [], avgProgress: 0 };
+    }
+    workloadByUser[name].count++;
+    workloadByUser[name].workflows.push(w.title);
+    workloadByUser[name].avgProgress =
+      (workloadByUser[name].avgProgress + (w.progress || 0)) /
+      workloadByUser[name].count;
+  });
+
+  const avgLoad =
+    Object.values(workloadByUser).reduce((a, b) => a + b.count, 0) /
+    Object.keys(workloadByUser).length;
+
+  const overloadedUsers = Object.entries(workloadByUser)
+    .filter(
+      ([name, data]) =>
+        data.count > avgLoad * 1.5 &&
+        name !== "Unassigned" &&
+        name !== SUPERVISOR_NAME,
+    )
+    .map(([name, data]) => ({
+      name,
+      count: data.count,
+      workflows: data.workflows,
+      avgProgress: Math.round(data.avgProgress),
+    }));
+
+  const underloadedUsers = Object.entries(workloadByUser)
+    .filter(
+      ([name, data]) =>
+        data.count < avgLoad * 0.5 &&
+        name !== "Unassigned" &&
+        name !== SUPERVISOR_NAME,
+    )
+    .map(([name, data]) => ({
+      name,
+      count: data.count,
+      workflows: data.workflows,
+      avgProgress: Math.round(data.avgProgress),
+    }));
+
+  // ========== BOTTLENECK ANALYSIS ==========
+  const stageCounts: Record<string, number> = {
+    "To Do": 0,
+    "In Progress": 0,
+    Review: 0,
+    Blocked: 0,
+    Completed: 0,
   };
+  workflows.forEach((w) => {
+    if (stageCounts[w.status] !== undefined) {
+      stageCounts[w.status]++;
+    }
+  });
+
+  const bottleneckStages = Object.entries(stageCounts)
+    .filter(([stage, count]) => {
+      if (stage === "Blocked") return count > 2;
+      if (stage === "Review") return count > 3;
+      return false;
+    })
+    .map(([stage, count]) => ({ stage, count }));
+
+  // ========== FORECASTING ==========
+  const likelyToComplete = workflows.filter(
+    (w) =>
+      (w.progress || 0) >= 50 && w.progress !== 100 && w.status !== "Blocked",
+  ).length;
+
+  const onTrackCount = workflows.filter((w) => {
+    if (!w.dueDate || w.progress === 100) return false;
+    const daysUntilDue = Math.ceil(
+      (new Date(w.dueDate).getTime() - new Date().getTime()) /
+        (1000 * 3600 * 24),
+    );
+    const expectedProgress = Math.min(100, (7 - daysUntilDue) * 14);
+    return (w.progress || 0) >= expectedProgress;
+  }).length;
+
+  const atRiskCount = workflows.filter((w) => {
+    if (!w.dueDate || w.progress === 100) return false;
+    const daysUntilDue = Math.ceil(
+      (new Date(w.dueDate).getTime() - new Date().getTime()) /
+        (1000 * 3600 * 24),
+    );
+    const expectedProgress = Math.min(100, (7 - daysUntilDue) * 14);
+    return (w.progress || 0) < expectedProgress - 20;
+  }).length;
+
+  // ========== PRODUCTIVITY METRICS ==========
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const velocity = Math.round((completed / 7) * 100) / 100;
+
+  let topPerformer = "";
+  let topPerformerCount = 0;
+  for (const [name, data] of Object.entries(workloadByUser)) {
+    if (
+      data.count > topPerformerCount &&
+      name !== "Unassigned" &&
+      name !== SUPERVISOR_NAME
+    ) {
+      topPerformerCount = data.count;
+      topPerformer = name;
+    }
+  }
+
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+  const recentCompleted = workflows.filter(
+    (w) =>
+      w.progress === 100 && w.createdAt && new Date(w.createdAt) > oneWeekAgo,
+  ).length;
+  const previousCompleted = workflows.filter(
+    (w) =>
+      w.progress === 100 &&
+      w.createdAt &&
+      new Date(w.createdAt) > twoWeeksAgo &&
+      new Date(w.createdAt) <= oneWeekAgo,
+  ).length;
+  const trend =
+    previousCompleted > 0
+      ? ((recentCompleted - previousCompleted) / previousCompleted) * 100
+      : recentCompleted > 0
+        ? 100
+        : 0;
+
+  const commonIssues = [];
+  if (stageCounts["Blocked"] > 2)
+    commonIssues.push("Multiple workflows blocked in Review stage");
+  if (overdue > 3) commonIssues.push("Team consistently missing deadlines");
+  if (highPriority > 5 && completed < highPriority)
+    commonIssues.push("High-priority backlog growing");
+  if (avgRiskScore > 50)
+    commonIssues.push("Elevated risk scores across active workflows");
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+      <div className="p-6 space-y-6 animate-pulse">
+        <div className="h-8 w-64 bg-muted rounded"></div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-28 bg-muted rounded-xl"></div>
+          ))}
         </div>
       </div>
     );
   }
 
-  const COLORS = ["#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6"];
-
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Supervisor Dashboard
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Welcome back, {session?.user?.name || "Themba"}! Here's your team's
-          performance overview.
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Workflows</p>
-              <p className="text-2xl font-bold mt-1">
-                {stats?.totalWorkflows || 0}
-              </p>
-            </div>
-            <div className="bg-teal-100 p-3 rounded-full">
-              <Users className="h-6 w-6 text-teal-600" />
-            </div>
+    <div className="p-6 space-y-6 animate-fade-in bg-gradient-to-br from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+      {/* Header with Themba */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Shield className="w-8 h-8 text-accent" />
+            <h1 className="text-3xl font-bold tracking-tight">
+              Supervisor Dashboard — {SUPERVISOR_NAME}
+            </h1>
           </div>
+          <p className="text-muted-foreground mt-1">
+            Real-time team performance, risk detection, capacity insights, and
+            predictive analytics
+          </p>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Completed</p>
-              <p className="text-2xl font-bold mt-1 text-green-600">
-                {stats?.completedWorkflows || 0}
-              </p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">In Progress</p>
-              <p className="text-2xl font-bold mt-1 text-blue-600">
-                {stats?.inProgressWorkflows || 0}
-              </p>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full">
-              <Clock className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Overdue</p>
-              <p className="text-2xl font-bold mt-1 text-red-600">
-                {stats?.overdueWorkflows || 0}
-              </p>
-            </div>
-            <div className="bg-red-100 p-3 rounded-full">
-              <AlertCircle className="h-6 w-6 text-red-600" />
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedTimeframe("week")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              selectedTimeframe === "week"
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            This Week
+          </button>
+          <button
+            onClick={() => setSelectedTimeframe("month")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              selectedTimeframe === "month"
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            This Month
+          </button>
+          <button
+            onClick={() => setSelectedTimeframe("quarter")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              selectedTimeframe === "quarter"
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            This Quarter
+          </button>
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Team Progress Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2 text-teal-600" />
-            Team Progress by Member
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats?.teamProgress || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis
-                label={{
-                  value: "Progress (%)",
-                  angle: -90,
-                  position: "insideLeft",
-                }}
-              />
-              <Tooltip />
-              <Bar dataKey="progress" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Stats Overview Row 1 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-foreground">{total}</div>
+              <div className="text-sm text-muted-foreground">
+                Total Workflows
+              </div>
+            </div>
+            <div className="stat-icon bg-blue-50 dark:bg-blue-950/30">
+              <Activity className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
         </div>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-emerald-600">
+                {completed}
+              </div>
+              <div className="text-sm text-muted-foreground">Completed</div>
+            </div>
+            <div className="stat-icon bg-emerald-50 dark:bg-emerald-950/30">
+              <CheckCircle className="w-5 h-5 text-emerald-600" />
+            </div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-amber-600">
+                {inProgress}
+              </div>
+              <div className="text-sm text-muted-foreground">In Progress</div>
+            </div>
+            <div className="stat-icon bg-amber-50 dark:bg-amber-950/30">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-red-600">{overdue}</div>
+              <div className="text-sm text-muted-foreground">Overdue</div>
+            </div>
+            <div className="stat-icon bg-red-50 dark:bg-red-950/30">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+            </div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-foreground">
+                {avgProgress}%
+              </div>
+              <div className="text-sm text-muted-foreground">Avg Progress</div>
+            </div>
+            <div className="stat-icon bg-teal-50 dark:bg-teal-950/30">
+              <TrendingUp className="w-5 h-5 text-teal-600" />
+            </div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-bold text-purple-600">
+                {completionRate}%
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Completion Rate
+              </div>
+            </div>
+            <div className="stat-icon bg-purple-50 dark:bg-purple-950/30">
+              <Target className="w-5 h-5 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Status Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Workflow Status Distribution
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={stats?.statusDistribution || []}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => {
-                  if (percent === undefined) return name;
-                  return `${name}: ${(percent * 100).toFixed(0)}%`;
-                }}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
+      {/* Stats Row 2 - Productivity Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card-depth p-4">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Flame className="w-4 h-4" />
+            <span className="text-xs">Team Velocity</span>
+          </div>
+          <div className="text-2xl font-bold">{velocity}</div>
+          <div className="text-xs text-muted-foreground">workflows/day avg</div>
+        </div>
+        <div className="card-depth p-4">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Award className="w-4 h-4" />
+            <span className="text-xs">Top Performer</span>
+          </div>
+          <div className="text-lg font-bold truncate">
+            {topPerformer || "—"}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {topPerformerCount} workflows
+          </div>
+        </div>
+        <div className="card-depth p-4">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <TrendingUp className="w-4 h-4" />
+            <span className="text-xs">Weekly Trend</span>
+          </div>
+          <div
+            className={`text-2xl font-bold ${trend >= 0 ? "text-emerald-600" : "text-red-600"}`}
+          >
+            {trend >= 0 ? `+${Math.round(trend)}%` : `${Math.round(trend)}%`}
+          </div>
+          <div className="text-xs text-muted-foreground">vs previous week</div>
+        </div>
+        <div className="card-depth p-4">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Brain className="w-4 h-4" />
+            <span className="text-xs">Avg Risk Score</span>
+          </div>
+          <div
+            className={`text-2xl font-bold ${avgRiskScore >= 50 ? "text-red-600" : avgRiskScore >= 30 ? "text-amber-600" : "text-emerald-600"}`}
+          >
+            {avgRiskScore}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            across all workflows
+          </div>
+        </div>
+      </div>
+
+      {/* CRITICAL RISK ALERT SECTION */}
+      {(criticalRiskWorkflows.length > 0 || highRiskWorkflows.length > 0) && (
+        <div
+          className={`rounded-xl p-5 border ${
+            criticalRiskWorkflows.length > 0
+              ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
+              : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
+          }`}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle
+              className={`w-5 h-5 ${criticalRiskWorkflows.length > 0 ? "text-red-600" : "text-amber-600"}`}
+            />
+            <h2 className="font-semibold text-foreground">
+              {criticalRiskWorkflows.length > 0
+                ? "🚨 CRITICAL RISK ALERT"
+                : "⚠️ Risk Alert"}
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {criticalRiskWorkflows.length > 0
+                ? "Immediate action required"
+                : "Review recommended"}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {criticalRiskWorkflows.slice(0, 5).map((w) => (
+              <div
+                key={w.id}
+                className="flex items-center justify-between p-3 bg-white/50 dark:bg-black/20 rounded-lg"
               >
-                {(stats?.statusDistribution || []).map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">{w.title}</p>
+                    <span className="badge badge-high text-xs">
+                      Risk: {w.riskScore}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Assignee: {w.assignee?.name || "Unassigned"} · Due:{" "}
+                    {w.dueDate
+                      ? new Date(w.dueDate).toLocaleDateString()
+                      : "No due date"}{" "}
+                    · Progress: {w.progress}%
+                  </p>
+                </div>
+                <Link href={`/workflows/${w.id}`}>
+                  <button className="text-red-600 text-sm hover:underline flex items-center gap-1">
+                    View <ArrowRight className="w-3 h-3" />
+                  </button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* LEFT COLUMN: Team Capacity & Workload */}
+        <div className="space-y-6">
+          <div className="card-depth p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-5 h-5 text-accent" />
+              <h2 className="font-semibold text-foreground">
+                Team Capacity Analysis
+              </h2>
+            </div>
+
+            {overloadedUsers.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-1 text-sm font-medium text-red-600 mb-2">
+                  <UserX className="w-4 h-4" /> Overloaded Members
+                </div>
+                {overloadedUsers.map((user) => (
+                  <div
+                    key={user.name}
+                    className="bg-red-50 dark:bg-red-950/20 rounded-lg p-3 mb-2"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-sm text-red-600">
+                        {user.count} tasks ({user.avgProgress}% avg)
+                      </span>
+                    </div>
+                    <div className="progress-bar mt-2">
+                      <div
+                        className="progress-bar-fill bg-red-500"
+                        style={{
+                          width: `${Math.min(100, (user.count / avgLoad) * 50)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+              </div>
+            )}
+
+            {underloadedUsers.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 mb-2">
+                  <UserCheck className="w-4 h-4" /> Available Capacity
+                </div>
+                {underloadedUsers.map((user) => (
+                  <div
+                    key={user.name}
+                    className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-3 mb-2"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-sm text-emerald-600">
+                        {user.count} tasks
+                      </span>
+                    </div>
+                    <div className="progress-bar mt-2">
+                      <div
+                        className="progress-bar-fill bg-emerald-500"
+                        style={{ width: `${(user.count / avgLoad) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4">
+              <h3 className="text-sm font-medium mb-3">
+                Workload Distribution
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(workloadByUser)
+                  .filter(
+                    ([name]) =>
+                      name !== SUPERVISOR_NAME && name !== "Unassigned",
+                  )
+                  .sort((a, b) => b[1].count - a[1].count)
+                  .map(([name, data]) => (
+                    <div key={name}>
+                      <div className="flex justify-between text-sm">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-accent"></span>
+                          {name}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {data.count} workflows
+                        </span>
+                      </div>
+                      <div className="progress-bar mt-1">
+                        <div
+                          className={`progress-bar-fill ${data.count > avgLoad * 1.3 ? "bg-red-500" : data.count < avgLoad * 0.7 ? "bg-emerald-500" : "bg-teal-500"}`}
+                          style={{
+                            width: `${(data.count / (avgLoad * 2)) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottleneck Analysis */}
+          <div className="card-depth p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <GitBranch className="w-5 h-5 text-amber-500" />
+              <h2 className="font-semibold text-foreground">
+                Bottleneck & Flow Analysis
+              </h2>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-sm font-medium mb-3">
+                Workflow Stage Distribution
+              </h3>
+              <div className="grid grid-cols-5 gap-2">
+                {Object.entries(stageCounts).map(([stage, count]) => (
+                  <div
+                    key={stage}
+                    className="text-center p-2 bg-muted/30 rounded-lg"
+                  >
+                    <div className="text-xl font-bold">{count}</div>
+                    <div className="text-xs text-muted-foreground">{stage}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {bottleneckStages.length > 0 && (
+              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-amber-600" />
+                  <span className="font-medium text-sm">
+                    Bottlenecks Detected
+                  </span>
+                </div>
+                {bottleneckStages.map((b) => (
+                  <div
+                    key={b.stage}
+                    className="flex justify-between items-center mb-2"
+                  >
+                    <span>{b.stage} Stage</span>
+                    <span className="badge badge-medium">
+                      {b.count} workflows stuck
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">Flow Health</h3>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Flow Efficiency</span>
+                    <span>
+                      {Math.round((completed / (total - notStarted)) * 100) ||
+                        0}
+                      %
+                    </span>
+                  </div>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${Math.min(100, (completed / (total - notStarted)) * 100)}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Forecasting & Insights */}
+        <div className="space-y-6">
+          <div className="card-depth p-5 bg-gradient-to-br from-accent/5 to-accent/10">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-5 h-5 text-accent" />
+              <h2 className="font-semibold text-foreground">Weekly Forecast</h2>
+              <span className="badge badge-progress text-xs">
+                AI Prediction
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center mb-4">
+              <div>
+                <div className="text-2xl font-bold text-emerald-600">
+                  {onTrackCount}
+                </div>
+                <div className="text-xs text-muted-foreground">On Track</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-amber-600">
+                  {atRiskCount}
+                </div>
+                <div className="text-xs text-muted-foreground">At Risk</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-accent">
+                  {likelyToComplete}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Forecast Complete
+                </div>
+              </div>
+            </div>
+
+            <div className="progress-bar mb-2">
+              <div
+                className="progress-bar-fill"
+                style={{
+                  width: `${(onTrackCount / Math.max(total, 1)) * 100}%`,
+                }}
+              ></div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Based on current velocity of {velocity} workflows/day
+            </p>
+          </div>
+
+          <div className="card-depth p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Flag className="w-5 h-5 text-purple-500" />
+              <h2 className="font-semibold text-foreground">
+                Priority Tasks (Risk-Ranked)
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {workflowsWithRisk
+                .filter((w) => w.progress < 100)
+                .sort((a, b) => b.riskScore - a.riskScore)
+                .slice(0, 5)
+                .map((task, index) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-accent w-6">
+                        #{index + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium text-sm">{task.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {task.assignee?.name} · {task.progress}% complete ·
+                          Due:{" "}
+                          {task.dueDate
+                            ? new Date(task.dueDate).toLocaleDateString()
+                            : "No due date"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`badge ${task.riskScore >= 75 ? "badge-high" : task.riskScore >= 50 ? "badge-medium" : "badge-low"}`}
+                      >
+                        Risk: {task.riskScore}%
+                      </span>
+                      <Link href={`/workflows/${task.id}`}>
+                        <button className="text-accent text-sm hover:underline">
+                          View →
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              {workflowsWithRisk.filter((w) => w.progress < 100).length ===
+                0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  No active workflows. All caught up! 🎉
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="card-depth p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-5 h-5 text-indigo-500" />
+              <h2 className="font-semibold text-foreground">
+                Pattern Recognition & AI Insights
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {commonIssues.map((issue, idx) => (
+                <div key={idx} className="flex items-start gap-2 p-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5"></div>
+                  <p className="text-sm text-muted-foreground">{issue}</p>
+                </div>
+              ))}
+              {commonIssues.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No significant patterns detected. Team performance is stable.
+                </p>
+              )}
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="flex items-start gap-2">
+                  <TrendingUp className="w-4 h-4 text-accent mt-0.5" />
+                  <p className="text-sm">
+                    <span className="font-medium">Recommendation:</span>{" "}
+                    {overdue > 5
+                      ? "Focus on clearing overdue items before starting new workflows."
+                      : overloadedUsers.length > 0
+                        ? `Consider redistributing tasks from ${overloadedUsers[0].name} to balance workload.`
+                        : "Team is performing well. Maintain current velocity and monitor bottlenecks."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card-depth p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-5 h-5 text-blue-500" />
+              <h2 className="font-semibold text-foreground">
+                Recent Team Activity
+              </h2>
+              <span className="badge badge-progress text-xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-teal-600 rounded-full animate-pulse" />
+                Live
+              </span>
+            </div>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {activities.slice(0, 8).map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-2 p-2 hover:bg-muted/30 rounded-lg transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <Activity className="w-3 h-3 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-sm">{activity.message}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(activity.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {activities.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">
+                  No recent activity
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Recent Team Activity</h2>
-        <div className="space-y-4">
-          {stats?.recentActivities?.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex items-start gap-3 pb-3 border-b last:border-0"
-            >
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                <Users className="h-4 w-4 text-teal-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm">
-                  <span className="font-medium">{activity.userName}</span>
-                  <span className="text-gray-600 ml-2">{activity.action}</span>
-                  <span className="font-medium ml-2">
-                    {activity.workflowTitle}
-                  </span>
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(activity.createdAt).toLocaleString()}
-                </p>
-              </div>
+      {/* Priority Distribution Chart */}
+      <div className="card-depth p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <PieChart className="w-5 h-5 text-accent" />
+          <h2 className="font-semibold text-foreground">
+            Workflow Priority Distribution
+          </h2>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">
+              {highPriority}
             </div>
-          ))}
+            <div className="text-sm text-muted-foreground">High Priority</div>
+            <div className="progress-bar mt-2">
+              <div
+                className="progress-bar-fill bg-red-500"
+                style={{
+                  width: `${(highPriority / Math.max(total, 1)) * 100}%`,
+                }}
+              ></div>
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-amber-600">
+              {mediumPriority}
+            </div>
+            <div className="text-sm text-muted-foreground">Medium Priority</div>
+            <div className="progress-bar mt-2">
+              <div
+                className="progress-bar-fill bg-amber-500"
+                style={{
+                  width: `${(mediumPriority / Math.max(total, 1)) * 100}%`,
+                }}
+              ></div>
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-emerald-600">
+              {lowPriority}
+            </div>
+            <div className="text-sm text-muted-foreground">Low Priority</div>
+            <div className="progress-bar mt-2">
+              <div
+                className="progress-bar-fill bg-emerald-500"
+                style={{
+                  width: `${(lowPriority / Math.max(total, 1)) * 100}%`,
+                }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

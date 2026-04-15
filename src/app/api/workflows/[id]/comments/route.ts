@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createNotification } from "@/lib/notifications";
+import { triggerMentionEmail } from "@/lib/email-triggers";
 
 // GET /api/workflows/[id]/comments
 export async function GET(
@@ -72,12 +73,15 @@ export async function POST(
       },
       include: {
         author: { select: { id: true, name: true } },
-        mentions: { include: { user: { select: { id: true, name: true } } } },
+        mentions: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
       },
     });
 
-    // Create mention notifications
+    // Create in-app notifications AND send emails for mentions
     for (const user of mentionedUsers) {
+      // Create in-app notification
       await createNotification({
         type: "MENTION",
         title: "You were mentioned",
@@ -85,6 +89,22 @@ export async function POST(
         userId: user.id,
         workflowId: id,
       });
+
+      // Send email notification (fire and await - critical for Vercel)
+      const emailResult = await triggerMentionEmail(
+        user.id,
+        author?.name ?? "Someone",
+        id,
+        body.trim(),
+      );
+
+      if (emailResult.success) {
+        console.log(`📧 Email sent to ${user.name} for mention`);
+      } else {
+        console.log(
+          `⚠️ Failed to send email to ${user.name}: ${emailResult.error}`,
+        );
+      }
     }
 
     return NextResponse.json(comment, { status: 201 });

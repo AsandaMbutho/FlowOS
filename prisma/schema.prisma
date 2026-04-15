@@ -68,6 +68,9 @@ model Workflow {
   comments    Comment[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  
+  // Stage History for accurate analytics
+  stageHistory WorkflowStageHistory[]
 }
 
 model Task {
@@ -128,4 +131,18 @@ model CommentMention {
 
   comment Comment @relation(fields: [commentId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
+}
+
+// Workflow Stage History - tracks when workflows enter/exit each stage
+model WorkflowStageHistory {
+  id          String   @id @default(cuid())
+  workflowId  String
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stage       String
+  enteredAt   DateTime @default(now())
+  exitedAt    DateTime?
+  
+  @@index([workflowId])
+  @@index([stage])
+  @@index([enteredAt])
 }

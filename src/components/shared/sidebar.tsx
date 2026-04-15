@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Workflow,
@@ -16,16 +17,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { signOut } from "next-auth/react";
-
-// ── Brand colours ──────────────────────────────────────────────────────────
-// Primary Navy  : #0D1B4B  — active nav, logo bg, primary text
-// Teal Accent   : #00C48C  — badges, dots, hover accents
-// Dark Surface  : #0A1628  — overlay backdrop
-// Light BG      : #F4F4F5  — section header backgrounds
-// Body Text     : #4B5563  — secondary / muted text
-// ---------------------------------------------------------------------------
 
 interface SidebarProps {
   open: boolean;
@@ -43,9 +34,8 @@ interface Counts {
   operations: number;
 }
 
-const CURRENT_USER = "Asanda";
-
 export function Sidebar({ open, setOpen }: SidebarProps) {
+  const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const [counts, setCounts] = useState<Counts>({
@@ -59,6 +49,10 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     operations: 0,
   });
 
+  const userName = session?.user?.name || "Team Member";
+  const userRole = session?.user?.role;
+  const isSupervisor = userRole === "MANAGER" || userRole === "ADMIN";
+
   useEffect(() => {
     fetch("/api/workflows")
       .then((r) => r.json())
@@ -67,8 +61,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
         setCounts({
           total: workflows.length,
           myTasks: workflows.filter(
-            (w) =>
-              w.assignee?.name === CURRENT_USER && w.status !== "Completed",
+            (w) => w.assignee?.name === userName && w.status !== "Completed",
           ).length,
           highPriority: workflows.filter(
             (w) => w.priority === "HIGH" && w.status !== "Completed",
@@ -81,7 +74,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
         });
       })
       .catch(() => {});
-  }, []);
+  }, [userName]);
 
   const navigation = [
     {
@@ -98,6 +91,16 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     },
     { name: "Kanban", href: "/kanban", icon: KanbanSquare, count: null },
     { name: "Analytics", href: "/analytics", icon: BarChart3, count: null },
+    ...(isSupervisor
+      ? [
+          {
+            name: "Supervisor",
+            href: "/dashboard/supervisor",
+            icon: Users,
+            count: null,
+          },
+        ]
+      : []),
     { name: "Teams", href: "/teams", icon: Users, count: null },
     { name: "Settings", href: "/settings", icon: Settings, count: null },
   ];
@@ -107,180 +110,196 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
       name: "My Tasks",
       icon: Clock,
       count: counts.myTasks,
-      color: "text-[#0D1B4B]", // navy for "my tasks"
-      filter: `assigned-to:${CURRENT_USER}`,
+      color: "text-white/60",
+      filter: `assigned-to:${userName}`,
     },
     {
       name: "High Priority",
       icon: AlertCircle,
       count: counts.highPriority,
-      color: "text-red-500", // keep red — universally understood as urgent
+      color: "text-red-400",
       filter: "priority:high",
     },
     {
       name: "Completed",
       icon: CheckCircle2,
       count: counts.completed,
-      color: "text-[#00C48C]", // teal accent for completed/success
+      color: "text-[#00C48C]",
       filter: "stage:DONE",
     },
   ];
 
-  const teams = [
-    { name: "Media on Africa", count: counts.total, color: "bg-[#00C48C]" },
-  ];
+  const teams = [{ name: "Media on Africa", count: counts.total }];
 
   const handleFilterClick = (filter: string) => {
     router.push(`/workflows?filter=${filter}`);
     setOpen(false);
   };
 
+  const userInitial = userName?.charAt(0).toUpperCase() || "T";
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    window.location.href = "/login";
+  };
+
   return (
     <>
-      {/* Mobile overlay — dark navy tint instead of pure black */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-[#0A1628]/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-[#0A1628]/70 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform border-r border-[#0D1B4B]/10 bg-white transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0",
+          "bg-[#0D1B4B]",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-full flex-col">
-          {/* Mobile logo */}
-          <div className="flex h-16 items-center gap-2 border-b border-[#0D1B4B]/10 px-4 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0D1B4B] text-white font-bold text-sm">
+          {/* Logo */}
+          <div className="flex h-16 items-center gap-3 px-5 border-b border-white/8">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00C48C] text-white font-extrabold text-base tracking-tight shadow-lg shadow-[#00C48C]/20">
               F
             </div>
-            <span className="font-semibold text-[#0D1B4B]">FlowOS</span>
+            <span className="font-bold text-white text-base tracking-tight">
+              FlowOS
+            </span>
           </div>
 
-          {/* User info */}
-          <div className="border-b border-[#0D1B4B]/10 px-4 py-3">
-            <div className="flex items-center gap-3">
-              {/* Avatar: navy-to-teal gradient matching the brand */}
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0D1B4B] to-[#00C48C] flex items-center justify-center text-white font-bold shrink-0">
-                A
+          {/* User card */}
+          <div className="px-4 py-3 border-b border-white/8">
+            <div className="flex items-center gap-3 rounded-xl bg-white/6 px-3 py-2.5">
+              <div className="h-9 w-9 rounded-full bg-[#00C48C] flex items-center justify-center text-white font-bold text-sm ring-2 ring-[#00C48C]/30 shrink-0">
+                {userInitial}
               </div>
               <div>
-                <p className="font-medium text-[#0D1B4B]">Asanda</p>
-                <p className="text-xs text-[#4B5563]">Media on Africa</p>
+                <p className="font-semibold text-white text-sm leading-tight">
+                  {userName}
+                </p>
+                <p className="text-xs text-white/40 leading-tight">
+                  {isSupervisor ? "Supervisor" : "Team Member"}
+                </p>
               </div>
+              <div className="ml-auto h-2 w-2 rounded-full bg-[#00C48C] ring-2 ring-[#00C48C]/20" />
             </div>
           </div>
 
-          {/* Nav */}
-          <div className="flex-1 overflow-y-auto py-4">
-            <div className="px-3">
-              {/* Main navigation */}
-              <div className="mb-6">
-                <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-[#4B5563]">
-                  MAIN
-                </h4>
-                <nav className="space-y-1">
-                  {navigation.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => setOpen(false)}
+          {/* Navigation */}
+          <div className="flex-1 overflow-y-auto py-4 px-3">
+            <div className="mb-5">
+              <h4 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-white/25">
+                Main
+              </h4>
+              <nav className="space-y-0.5">
+                {navigation.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                        isActive
+                          ? "bg-[#00C48C]/15 text-[#00C48C]"
+                          : "text-white/50 hover:bg-white/5 hover:text-white/80",
+                      )}
+                    >
+                      <item.icon
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-[#0D1B4B] text-white"
-                            : "text-[#0D1B4B] hover:bg-[#00C48C]/10",
+                          "h-4 w-4 shrink-0",
+                          isActive ? "text-[#00C48C]" : "text-white/35",
                         )}
-                      >
-                        <item.icon
+                      />
+                      <span className="flex-1">{item.name}</span>
+                      {item.count !== null && item.count > 0 && (
+                        <span
                           className={cn(
-                            "h-4 w-4",
-                            isActive ? "text-[#00C48C]" : "text-[#4B5563]",
+                            "rounded-full px-2 py-0.5 text-xs font-semibold",
+                            isActive
+                              ? "bg-[#00C48C]/20 text-[#00C48C]"
+                              : "bg-white/8 text-white/40",
                           )}
-                        />
-                        <span className="flex-1">{item.name}</span>
-                        {item.count !== null && item.count > 0 && (
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-xs font-medium",
-                              isActive
-                                ? "bg-[#00C48C]/20 text-[#00C48C]"
-                                : "bg-[#0D1B4B]/10 text-[#0D1B4B]",
-                            )}
-                          >
-                            {item.count}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </nav>
-              </div>
+                        >
+                          {item.count}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
 
-              {/* Quick Filters */}
-              <div className="mb-6">
-                <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-[#4B5563]">
-                  QUICK FILTERS
-                </h4>
-                <nav className="space-y-1">
-                  {filters.map((filter) => (
-                    <button
-                      key={filter.name}
-                      onClick={() => handleFilterClick(filter.filter)}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[#0D1B4B] hover:bg-[#00C48C]/10 transition-colors"
-                    >
-                      <filter.icon className={cn("h-4 w-4", filter.color)} />
-                      <span className="flex-1 text-left">{filter.name}</span>
-                      <span className="rounded-full bg-[#0D1B4B]/10 px-2 py-0.5 text-xs text-[#0D1B4B] font-medium">
-                        {filter.count}
-                      </span>
-                    </button>
-                  ))}
-                </nav>
-              </div>
+            <div className="mx-2 mb-5 h-px bg-white/6" />
 
-              {/* Teams */}
-              <div className="mb-6">
-                <h4 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-[#4B5563]">
-                  TEAM
-                </h4>
-                <nav className="space-y-1">
-                  {teams.map((team) => (
-                    <button
-                      key={team.name}
-                      onClick={() => {
-                        router.push("/teams");
-                        setOpen(false);
-                      }}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[#0D1B4B] hover:bg-[#00C48C]/10 transition-colors"
-                    >
-                      {/* Teal dot for the team indicator */}
-                      <div className={cn("h-2 w-2 rounded-full", team.color)} />
-                      <span className="flex-1 text-left">{team.name}</span>
-                      <span className="rounded-full bg-[#0D1B4B]/10 px-2 py-0.5 text-xs text-[#0D1B4B] font-medium">
-                        {team.count}
-                      </span>
-                    </button>
-                  ))}
-                </nav>
-              </div>
+            {/* Quick Filters */}
+            <div className="mb-5">
+              <h4 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-white/25">
+                Quick Filters
+              </h4>
+              <nav className="space-y-0.5">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.name}
+                    onClick={() => handleFilterClick(filter.filter)}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/5 hover:text-white/80 transition-all duration-150"
+                  >
+                    <filter.icon
+                      className={cn("h-4 w-4 shrink-0", filter.color)}
+                    />
+                    <span className="flex-1 text-left">{filter.name}</span>
+                    <span className="rounded-full bg-white/8 px-2 py-0.5 text-xs font-semibold text-white/35">
+                      {filter.count}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            <div className="mx-2 mb-5 h-px bg-white/6" />
+
+            {/* Team */}
+            <div>
+              <h4 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-white/25">
+                Team
+              </h4>
+              <nav className="space-y-0.5">
+                {teams.map((team) => (
+                  <button
+                    key={team.name}
+                    onClick={() => {
+                      router.push("/teams");
+                      setOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/5 hover:text-white/80 transition-all duration-150"
+                  >
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00C48C] opacity-50" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00C48C]" />
+                    </span>
+                    <span className="flex-1 text-left">{team.name}</span>
+                    <span className="rounded-full bg-white/8 px-2 py-0.5 text-xs font-semibold text-white/35">
+                      {team.count}
+                    </span>
+                  </button>
+                ))}
+              </nav>
             </div>
           </div>
 
-          {/* Footer — log out */}
-          <div className="border-t border-[#0D1B4B]/10 p-4">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-red-600 hover:bg-red-50 hover:text-red-700"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+          {/* Footer - Logout Button */}
+          <div className="border-t border-white/8 p-4">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/35 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150"
             >
-              <LogOut className="h-4 w-4" /> Log out
-            </Button>
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
           </div>
         </div>
       </div>

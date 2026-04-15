@@ -606,8 +606,9 @@ export default function WorkflowsPage() {
                     {w.assignee.name}
                   </span>
                 </div>
+                {/* FIXED: Changed from tasksLeft === 0 to progress === 100 */}
                 <span className="text-xs text-gray-400">
-                  {w.tasksLeft === 0 ? "✓ Done" : `${w.tasksLeft} tasks left`}
+                  {w.progress === 100 ? "✓ Done" : `${w.tasksLeft} tasks left`}
                 </span>
               </div>
             </Card>

@@ -1,48 +1,80 @@
 import { PrismaClient, Priority, Stage, Role } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...");
 
-  await prisma.activity.deleteMany();
-  await prisma.task.deleteMany();
-  await prisma.workflow.deleteMany();
-  await prisma.user.deleteMany();
+  // Delete in correct order - only delete tables that exist
+  try {
+    await prisma.activity.deleteMany();
+  } catch {
+    console.log("Skipping activity delete");
+  }
 
+  try {
+    await prisma.task.deleteMany();
+  } catch {
+    console.log("Skipping task delete");
+  }
+
+  try {
+    await prisma.comment.deleteMany();
+  } catch {
+    console.log("Skipping comment delete");
+  }
+
+  try {
+    await prisma.workflow.deleteMany();
+  } catch {
+    console.log("Skipping workflow delete");
+  }
+
+  try {
+    await prisma.user.deleteMany();
+  } catch {
+    console.log("Skipping user delete");
+  }
+
+  // Create users with PASSWORDS for authentication
   const asanda = await prisma.user.create({
     data: {
-      email: "asanda@flowos.com",
+      email: "asanda@mediaonafrica.co.za",
       name: "Asanda",
-      role: Role.ADMIN,
+      role: Role.USER,
+      password: await bcrypt.hash("password123", 10),
     },
   });
 
   const sizwe = await prisma.user.create({
     data: {
-      email: "sizwe@flowos.com",
+      email: "sizwe@mediaonafrica.co.za",
       name: "Sizwe",
-      role: Role.MANAGER,
+      role: Role.USER,
+      password: await bcrypt.hash("password123", 10),
     },
   });
 
   const themba = await prisma.user.create({
     data: {
-      email: "themba@flowos.com",
+      email: "themba@mediaonafrica.co.za",
       name: "Themba",
-      role: Role.USER,
+      role: Role.MANAGER,
+      password: await bcrypt.hash("password123", 10),
     },
   });
 
   const shravan = await prisma.user.create({
     data: {
-      email: "shravan@flowos.com",
+      email: "shravan@mediaonafrica.co.za",
       name: "Shravan",
       role: Role.USER,
+      password: await bcrypt.hash("password123", 10),
     },
   });
 
-  console.log("✅ Users created");
+  console.log("✅ Users created with passwords");
 
   const w1 = await prisma.workflow.create({
     data: {
@@ -309,6 +341,20 @@ async function main() {
 
   console.log("✅ Activities created");
   console.log("🎉 Database seeded successfully!");
+  console.log("");
+  console.log("📋 Login Credentials:");
+  console.log(
+    "   Themba (Supervisor):   themba@mediaonafrica.co.za / password123",
+  );
+  console.log(
+    "   Asanda (Team Member):  asanda@mediaonafrica.co.za / password123",
+  );
+  console.log(
+    "   Sizwe (Team Member):   sizwe@mediaonafrica.co.za / password123",
+  );
+  console.log(
+    "   Shravan (Team Member): shravan@mediaonafrica.co.za / password123",
+  );
 }
 
 main()

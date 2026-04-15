@@ -248,28 +248,32 @@ export default function DashboardPage() {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-accent" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {greeting}, {currentUser} 👋
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            {greeting}, {currentUser}
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="text-muted-foreground mt-1 text-sm">
             Here's a summary of your workflows and team activity.
           </p>
         </div>
+
+        {/* Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Date Range Picker */}
           <div className="relative">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 border-border bg-background hover:bg-muted"
               onClick={() => setShowDatePicker(!showDatePicker)}
             >
               <CalendarDays className="w-4 h-4" />
@@ -279,7 +283,7 @@ export default function DashboardPage() {
               />
             </Button>
             {showDatePicker && (
-              <div className="absolute right-0 mt-1 bg-white border rounded-xl shadow-lg z-10 py-1 min-w-[160px]">
+              <div className="absolute right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 py-1 min-w-[160px] animate-fade-in">
                 {DATE_OPTIONS.map((opt) => (
                   <button
                     key={opt}
@@ -287,10 +291,10 @@ export default function DashboardPage() {
                       setDateRange(opt);
                       setShowDatePicker(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors ${
                       dateRange === opt
-                        ? "text-blue-600 font-medium"
-                        : "text-gray-700"
+                        ? "text-accent font-medium"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {opt}
@@ -300,11 +304,12 @@ export default function DashboardPage() {
             )}
           </div>
 
+          {/* Export Dropdown */}
           <div className="relative">
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 border-border bg-background hover:bg-muted"
               onClick={() => setShowExportMenu(!showExportMenu)}
             >
               <Download className="w-4 h-4" /> Export
@@ -313,29 +318,30 @@ export default function DashboardPage() {
               />
             </Button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-1 bg-white border rounded-xl shadow-lg z-10 py-1 min-w-[180px]">
+              <div className="absolute right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 py-1 min-w-[180px] animate-fade-in">
                 <button
                   onClick={exportCSV}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
                 >
-                  <FileText className="w-4 h-4 text-green-600" /> Export as CSV
+                  <FileText className="w-4 h-4 text-emerald-600" /> Export as
+                  CSV
                 </button>
                 <button
                   onClick={exportExcel}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-blue-600" /> Export
                   as Excel
                 </button>
                 <button
                   onClick={exportPDF}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4 text-red-500" /> Export as PDF
                 </button>
                 <button
                   onClick={exportJSON}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors text-gray-700 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <File className="w-4 h-4 text-orange-500" /> Export as JSON
                 </button>
@@ -343,26 +349,29 @@ export default function DashboardPage() {
             )}
           </div>
 
+          {/* New Workflow Button */}
           <Link href="/workflows">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1.5">
+            <Button size="sm" className="btn-primary gap-1.5">
               <Plus className="w-4 h-4" /> New Workflow
             </Button>
           </Link>
         </div>
       </div>
 
+      {/* Stats Cards */}
       <StatsCards />
 
+      {/* My Summary Section */}
       <div>
-        <h2 className="text-base font-semibold mb-3 text-gray-700">
+        <h2 className="text-base font-semibold mb-3 text-foreground">
           My Summary
         </h2>
         {loading ? (
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading your workflows…
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               {
                 icon: Clock,
@@ -373,8 +382,8 @@ export default function DashboardPage() {
               },
               {
                 icon: CheckCircle,
-                bg: "bg-green-100",
-                iconColor: "text-green-600",
+                bg: "bg-emerald-100",
+                iconColor: "text-emerald-600",
                 label: "Completed",
                 val: myCompleted,
               },
@@ -393,22 +402,21 @@ export default function DashboardPage() {
                 val: myTasksLeft,
               },
             ].map(({ icon: Icon, bg, iconColor, label, val }) => (
-              <div
-                key={label}
-                className="bg-white border rounded-xl p-4 flex items-center gap-3"
-              >
+              <div key={label} className="stat-card flex items-center gap-3">
                 <div
-                  className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center`}
+                  className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center transition-all group-hover:scale-105`}
                 >
                   {Icon ? (
-                    <Icon className={`w-4 h-4 ${iconColor}`} />
+                    <Icon className={`w-5 h-5 ${iconColor}`} />
                   ) : (
                     <span className={`${iconColor} font-bold text-sm`}>#</span>
                   )}
                 </div>
                 <div>
-                  <div className="text-xl font-bold">{val}</div>
-                  <div className="text-xs text-gray-500">{label}</div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {val}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{label}</div>
                 </div>
               </div>
             ))}
@@ -416,14 +424,18 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* AI Insights Panel */}
       <InsightsPanel />
 
+      {/* Main Grid: My Workflows + Team Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold">My Workflows</h2>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <h2 className="text-base font-semibold text-foreground">
+                My Workflows
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Showing only workflows assigned to you
               </p>
             </div>
@@ -431,7 +443,7 @@ export default function DashboardPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-blue-600 text-sm h-8"
+                className="text-accent text-sm h-8 hover:text-accent/80 hover:bg-accent/10"
               >
                 View all workflows →
               </Button>
@@ -439,11 +451,14 @@ export default function DashboardPage() {
           </div>
           <PipelineView />
         </div>
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Team Activity</h2>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse" />
+            <h2 className="text-base font-semibold text-foreground">
+              Team Activity
+            </h2>
+            <span className="badge badge-progress text-xs flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-teal-600 rounded-full animate-pulse" />
               Live
             </span>
           </div>
@@ -451,13 +466,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
-        <p className="text-sm text-gray-500">
-          <span className="font-medium text-gray-700">Tip:</span> Head to
+      {/* Tip Footer */}
+      <div className="insights-card flex items-center justify-between p-4">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Tip:</span> Head to
           Workflows to see all team workflows.
         </p>
         <Link href="/workflows">
-          <Button variant="link" size="sm" className="text-blue-600 text-sm">
+          <Button variant="link" size="sm" className="text-accent text-sm">
             Go to workflows →
           </Button>
         </Link>

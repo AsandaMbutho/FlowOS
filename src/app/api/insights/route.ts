@@ -48,7 +48,7 @@ export async function GET() {
         dueDateStr = w.dueDate;
       }
 
-      // FIXED: Changed w.name to w.title (workflows have title, not name)
+      // FIXED: Using title (not name) and stage (not status)
       return `- "${w.title || "Unnamed"}" | Status: ${w.stage || "Unknown"} | Assignee: ${assigneeName} | Progress: ${w.progress ?? 0}% | Due: ${dueDateStr}`;
     });
 

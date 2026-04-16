@@ -36,9 +36,9 @@ export async function POST(
       select: { name: true, email: true },
     });
 
-    // Create in-app notification
+    // Create in-app notification - FIXED: Changed "ASSIGNMENT" to "ASSIGNED"
     await createNotification({
-      type: "ASSIGNMENT",
+      type: "ASSIGNED",
       title: "New workflow assigned",
       message: `You've been assigned to "${workflow.title}"`,
       userId: assigneeId,

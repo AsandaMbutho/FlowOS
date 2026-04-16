@@ -11,7 +11,6 @@ export async function PATCH(
     const { id } = await params;
     const { status, changedById, oldStatus } = await request.json();
 
-    // Get workflow with assignee
     const workflow = await db.workflow.findUnique({
       where: { id },
       include: { assignee: { select: { id: true, name: true, email: true } } },
@@ -24,42 +23,28 @@ export async function PATCH(
       );
     }
 
-    // Update status
+    // FIXED: Use stage instead of status (based on your schema)
     const updatedWorkflow = await db.workflow.update({
       where: { id },
-      data: { status },
+      data: { stage: status as any }, // Convert status to stage
     });
 
-    // Get changer's name
     const changedBy = await db.user.findUnique({
       where: { id: changedById },
       select: { name: true },
     });
 
-    // Create in-app notification for assignee
     if (workflow.assigneeId && workflow.assigneeId !== changedById) {
       await createNotification({
-        type: "STATUS_UPDATE",
+        type: "STATUS_CHANGE",
         title: "Workflow status changed",
         message: `${changedBy?.name ?? "Someone"} changed status of "${workflow.title}" from ${oldStatus} to ${status}`,
         userId: workflow.assigneeId,
         workflowId: id,
       });
 
-      // Send email notification
       if (workflow.assignee?.email) {
-        const emailResult = await triggerStatusChangeEmail(
-          id,
-          oldStatus,
-          status,
-          changedById,
-        );
-
-        if (emailResult.success) {
-          console.log(
-            `📧 Status change email sent to ${workflow.assignee.name}`,
-          );
-        }
+        await triggerStatusChangeEmail(id, oldStatus, status, changedById);
       }
     }
 

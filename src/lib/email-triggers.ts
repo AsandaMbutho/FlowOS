@@ -1,4 +1,3 @@
-// lib/email-triggers.ts
 import { prisma } from "@/lib/prisma";
 import {
   sendMentionEmail,
@@ -8,7 +7,6 @@ import {
   sendTaskCompletedEmail,
 } from "@/lib/email";
 
-// Trigger email when someone is mentioned in a comment
 export async function triggerMentionEmail(
   mentionedUserId: string,
   mentionedByName: string,
@@ -27,56 +25,46 @@ export async function triggerMentionEmail(
     });
 
     if (!user?.email) {
-      console.log(`No email for user ${mentionedUserId}`);
       return { success: false, error: "No email address" };
     }
 
-    const result = await sendMentionEmail(
+    return await sendMentionEmail(
       user.email,
       mentionedByName,
       workflow?.title || "a workflow",
       comment,
       workflowId,
     );
-
-    return result;
   } catch (error) {
     console.error("Failed to send mention email:", error);
     return { success: false, error };
   }
 }
 
-// Trigger email when workflow becomes overdue
 export async function triggerOverdueEmail(workflowId: string) {
   try {
     const workflow = await prisma.workflow.findUnique({
       where: { id: workflowId },
-      include: {
-        assignee: { select: { email: true, name: true } },
-      },
+      include: { assignee: { select: { email: true, name: true } } },
     });
 
     if (!workflow?.assignee?.email) {
-      console.log(`No assignee email for workflow ${workflowId}`);
       return { success: false, error: "No assignee email" };
     }
 
-    const result = await sendOverdueEmail(
+    return await sendOverdueEmail(
       workflow.assignee.email,
-      workflow.assignee.name,
+      workflow.assignee.name || "Team Member",
       workflow.title,
-      workflow.dueDate,
+      workflow.dueDate || new Date(),
       workflowId,
     );
-
-    return result;
   } catch (error) {
     console.error("Failed to send overdue email:", error);
     return { success: false, error };
   }
 }
 
-// Trigger email when workflow status changes
 export async function triggerStatusChangeEmail(
   workflowId: string,
   oldStatus: string,
@@ -86,9 +74,7 @@ export async function triggerStatusChangeEmail(
   try {
     const workflow = await prisma.workflow.findUnique({
       where: { id: workflowId },
-      include: {
-        assignee: { select: { email: true, name: true } },
-      },
+      include: { assignee: { select: { email: true, name: true } } },
     });
 
     const changedBy = await prisma.user.findUnique({
@@ -97,11 +83,10 @@ export async function triggerStatusChangeEmail(
     });
 
     if (!workflow?.assignee?.email) {
-      console.log(`No assignee email for workflow ${workflowId}`);
       return { success: false, error: "No assignee email" };
     }
 
-    const result = await sendStatusChangeEmail(
+    return await sendStatusChangeEmail(
       workflow.assignee.email,
       workflow.title,
       oldStatus,
@@ -109,15 +94,12 @@ export async function triggerStatusChangeEmail(
       changedBy?.name || "Someone",
       workflowId,
     );
-
-    return result;
   } catch (error) {
     console.error("Failed to send status change email:", error);
     return { success: false, error };
   }
 }
 
-// Trigger email when workflow is assigned
 export async function triggerAssignmentEmail(
   workflowId: string,
   assigneeUserId: string,
@@ -140,26 +122,22 @@ export async function triggerAssignmentEmail(
     ]);
 
     if (!assignee?.email) {
-      console.log(`No email for assignee ${assigneeUserId}`);
       return { success: false, error: "No assignee email" };
     }
 
-    const result = await sendAssignmentEmail(
+    return await sendAssignmentEmail(
       assignee.email,
       assignee.name || "Team Member",
       workflow?.title || "a workflow",
       assignedBy?.name || "Someone",
       workflowId,
     );
-
-    return result;
   } catch (error) {
     console.error("Failed to send assignment email:", error);
     return { success: false, error };
   }
 }
 
-// Trigger email when task is completed
 export async function triggerTaskCompletedEmail(
   workflowId: string,
   taskTitle: string,
@@ -178,19 +156,16 @@ export async function triggerTaskCompletedEmail(
     ]);
 
     if (!workflow?.assignee?.email) {
-      console.log(`No assignee email for workflow ${workflowId}`);
       return { success: false, error: "No assignee email" };
     }
 
-    const result = await sendTaskCompletedEmail(
+    return await sendTaskCompletedEmail(
       workflow.assignee.email,
       taskTitle,
       workflow.title,
       completedBy?.name || "Someone",
       workflowId,
     );
-
-    return result;
   } catch (error) {
     console.error("Failed to send task completed email:", error);
     return { success: false, error };

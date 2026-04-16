@@ -7,21 +7,22 @@ import {
   MessageSquare,
   Edit3,
   AlertCircle,
-  Clock,
 } from "lucide-react";
 
 interface Activity {
   id: string;
-  userName: string;
+  user: string;
   action: string;
+  details: string;
+  time: string;
   workflowTitle: string;
-  createdAt: string;
+  userColor: string;
 }
 
 function formatDate(dateStr: string): string {
   try {
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "Just now";
+    if (isNaN(date.getTime())) return "Recently";
 
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -29,7 +30,6 @@ function formatDate(dateStr: string): string {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    // Same day - show time
     if (diffDays === 0) {
       if (diffMins < 1) return "Just now";
       if (diffMins < 60)
@@ -37,31 +37,18 @@ function formatDate(dateStr: string): string {
       return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
     }
 
-    // Yesterday
-    if (diffDays === 1) {
-      return `Yesterday at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    }
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
 
-    // Within a week
-    if (diffDays < 7) {
-      return `${diffDays} days ago at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    }
-
-    // Older - show full date
-    return date.toLocaleDateString("en-ZA", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return date.toLocaleDateString();
   } catch {
-    return "Just now";
+    return "Recently";
   }
 }
 
-// Get icon based on action type
 function getActivityIcon(action: string) {
   const actionLower = action.toLowerCase();
-  if (actionLower.includes("complete") || actionLower.includes("finish")) {
+  if (actionLower.includes("complete")) {
     return <CheckCircle className="w-4 h-4 text-emerald-500" />;
   }
   if (actionLower.includes("comment")) {
@@ -83,9 +70,14 @@ export function ActivityFeed() {
   useEffect(() => {
     fetch("/api/activities?limit=10")
       .then((res) => res.json())
-      .then((data) => setActivities(Array.isArray(data) ? data : []))
-      .catch(() => setActivities([]))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        setActivities(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setActivities([]);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
@@ -106,6 +98,15 @@ export function ActivityFeed() {
     );
   }
 
+  if (activities.length === 0) {
+    return (
+      <div className="card-depth p-5 text-center">
+        <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">No recent activity</p>
+      </div>
+    );
+  }
+
   return (
     <div className="card-depth p-0 overflow-hidden">
       <div className="divide-y divide-border max-h-96 overflow-y-auto custom-scrollbar">
@@ -118,7 +119,7 @@ export function ActivityFeed() {
               <div className="flex-1">
                 <p className="text-sm text-foreground/90">
                   <span className="font-semibold text-foreground">
-                    {activity.userName}
+                    {activity.user}
                   </span>
                   <span className="text-muted-foreground ml-2">
                     {activity.action}
@@ -127,20 +128,18 @@ export function ActivityFeed() {
                     {activity.workflowTitle}
                   </span>
                 </p>
+                {activity.details && activity.details !== activity.action && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {activity.details}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatDate(activity.createdAt)}
+                  {formatDate(activity.time)}
                 </p>
               </div>
             </div>
           </div>
         ))}
-        {activities.length === 0 && (
-          <div className="empty-state py-8">
-            <div className="empty-icon text-3xl mb-2">📭</div>
-            <p className="empty-title">No recent activity</p>
-            <p className="empty-description">Team activity will appear here</p>
-          </div>
-        )}
       </div>
     </div>
   );

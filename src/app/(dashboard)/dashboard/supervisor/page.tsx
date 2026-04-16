@@ -51,6 +51,48 @@ interface Activity {
   user: { name: string };
 }
 
+// Helper function to format due dates correctly
+function formatDueDate(dateValue: any): string {
+  if (!dateValue) return "No due date";
+
+  // Handle "15 May" format (no year)
+  if (typeof dateValue === "string") {
+    const months: Record<string, number> = {
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
+    };
+    const match = dateValue.match(/(\d+)\s+(\w+)/);
+    if (match) {
+      const day = parseInt(match[1]);
+      const monthName = match[2].slice(0, 3);
+      const month = months[monthName];
+      if (month !== undefined) {
+        return `${month + 1}/${day}/2026`;
+      }
+    }
+  }
+
+  // Try normal date parsing
+  try {
+    const d = new Date(dateValue);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString();
+    }
+  } catch (e) {}
+
+  return String(dateValue);
+}
+
 // Supervisor name
 const SUPERVISOR_NAME = "Themba";
 
@@ -542,10 +584,7 @@ export default function SupervisorDashboard() {
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Assignee: {w.assignee?.name || "Unassigned"} · Due:{" "}
-                    {w.dueDate
-                      ? new Date(w.dueDate).toLocaleDateString()
-                      : "No due date"}{" "}
-                    · Progress: {w.progress}%
+                    {formatDueDate(w.dueDate)} · Progress: {w.progress}%
                   </p>
                 </div>
                 <Link href={`/workflows/${w.id}`}>
@@ -809,10 +848,7 @@ export default function SupervisorDashboard() {
                         <p className="font-medium text-sm">{task.title}</p>
                         <p className="text-xs text-muted-foreground">
                           {task.assignee?.name} · {task.progress}% complete ·
-                          Due:{" "}
-                          {task.dueDate
-                            ? new Date(task.dueDate).toLocaleDateString()
-                            : "No due date"}
+                          Due: {formatDueDate(task.dueDate)}
                         </p>
                       </div>
                     </div>

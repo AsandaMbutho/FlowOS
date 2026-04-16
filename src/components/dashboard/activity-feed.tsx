@@ -19,8 +19,18 @@ interface Activity {
   userColor: string;
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateValue: any): string {
   try {
+    if (!dateValue) return "Recently";
+
+    let dateStr = String(dateValue);
+
+    // Remove any spaces
+    dateStr = dateStr.replace(/\s/g, "");
+
+    // Replace H with T (fix malformed date)
+    dateStr = dateStr.replace("H", "T");
+
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return "Recently";
 

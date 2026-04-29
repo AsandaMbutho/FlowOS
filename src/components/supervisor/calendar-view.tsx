@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enZA } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import type { Event, stringOrDate } from "react-big-calendar";
 
 const locales = {
   "en-ZA": enZA,
@@ -58,6 +59,7 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
       .filter((workflow) => workflow.dueDate)
       .map((workflow) => {
         const parsedDate = parseDueDate(workflow.dueDate);
+        if (!parsedDate) return null;
         return {
           id: workflow.id,
           title: workflow.title,
@@ -70,7 +72,8 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
             priority: workflow.priority,
           },
         };
-      });
+      })
+      .filter(Boolean) as CalendarEvent[];
     setEvents(mappedEvents);
   }, [workflows]);
 
@@ -107,7 +110,9 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
     }
   };
 
-  const eventStyleGetter = (event: CalendarEvent) => {
+  const eventStyleGetter = (
+    event: CalendarEvent,
+  ): { style: React.CSSProperties } => {
     const today = new Date(2026, 3, 28);
     today.setHours(0, 0, 0, 0);
     const eventDate = new Date(event.start);
@@ -147,7 +152,7 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
 
   return (
     <div className="h-[550px] w-full">
-      {/* Custom Toolbar - Working Blue Buttons */}
+      {/* Custom Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4 p-3 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-2">
           <button
@@ -206,16 +211,18 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
         </div>
       </div>
 
-      {/* Calendar Component - No internal toolbar */}
+      {/* Calendar Component */}
       <Calendar
         localizer={localizer}
         events={events}
         startAccessor="start"
         endAccessor="end"
         date={currentDate}
-        onNavigate={(date) => setCurrentDate(date)}
+        onNavigate={(date: Date) => setCurrentDate(date)}
         view={currentView}
-        onView={(view) => setCurrentView(view as "month" | "week" | "day")}
+        onView={(view: string) =>
+          setCurrentView(view as "month" | "week" | "day")
+        }
         style={{ height: "calc(100% - 60px)" }}
         eventPropGetter={eventStyleGetter}
         views={["month", "week", "day"]}

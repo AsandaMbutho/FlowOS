@@ -72,6 +72,29 @@ export async function PATCH(
       ? await db.user.findFirst({ where: { name: assigneeName } })
       : undefined;
 
+    // Fix: Handle dueDate with timezone to prevent day shift
+    let fixedDueDate = undefined;
+    if (dueDate !== undefined) {
+      if (dueDate === null || dueDate === "") {
+        fixedDueDate = null;
+      } else {
+        // Parse the date and set to noon UTC to avoid timezone issues
+        const dateObj = new Date(dueDate);
+        if (!isNaN(dateObj.getTime())) {
+          fixedDueDate = new Date(
+            Date.UTC(
+              dateObj.getFullYear(),
+              dateObj.getMonth(),
+              dateObj.getDate(),
+              12,
+              0,
+              0,
+            ),
+          );
+        }
+      }
+    }
+
     const updated = await db.workflow.update({
       where: { id },
       data: {
@@ -81,7 +104,7 @@ export async function PATCH(
         ...(priority !== undefined && { priority: priority as Priority }),
         ...(progress !== undefined && { progress }),
         ...(team !== undefined && { team }),
-        ...(dueDate !== undefined && { dueDate: new Date(dueDate) }),
+        ...(fixedDueDate !== undefined && { dueDate: fixedDueDate }),
         ...(assignee !== undefined && { assigneeId: assignee?.id ?? null }),
       },
       include: {
@@ -135,13 +158,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Delete all related records
     await db.notification.deleteMany({ where: { workflowId: id } });
     await db.activity.deleteMany({ where: { workflowId: id } });
+    await db.comment.deleteMany({ where: { workflowId: id } });
     await db.task.deleteMany({ where: { workflowId: id } });
+    await db.workflowStageHistory.deleteMany({ where: { workflowId: id } });
     await db.workflow.delete({ where: { id } });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("DELETE /api/workflows/[id] error:", error);
+    console.error("DELETE error:", error);
     return NextResponse.json(
       { error: "Failed to delete workflow" },
       { status: 500 },

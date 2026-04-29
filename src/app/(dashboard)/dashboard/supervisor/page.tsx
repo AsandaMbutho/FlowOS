@@ -1,5 +1,5 @@
 "use client";
-
+import { CalendarView } from "@/components/supervisor/calendar-view";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -45,17 +45,18 @@ interface User {
 
 interface Activity {
   id: string;
-  type: string;
-  message: string;
-  createdAt: string;
-  user: { name: string };
+  user: string;
+  action: string;
+  details: string;
+  time: string;
+  workflowTitle: string;
 }
 
-// Helper function to format due dates correctly
 function formatDueDate(dateValue: any): string {
   if (!dateValue) return "No due date";
+  if (dateValue === "Overdue") return "Overdue";
+  if (dateValue === "No due date") return "No due date";
 
-  // Handle "15 May" format (no year)
   if (typeof dateValue === "string") {
     const months: Record<string, number> = {
       Jan: 0,
@@ -82,7 +83,6 @@ function formatDueDate(dateValue: any): string {
     }
   }
 
-  // Try normal date parsing
   try {
     const d = new Date(dateValue);
     if (!isNaN(d.getTime())) {
@@ -93,7 +93,74 @@ function formatDueDate(dateValue: any): string {
   return String(dateValue);
 }
 
-// Supervisor name
+function isWorkflowOverdue(dueDate: any, progress: number): boolean {
+  if (progress === 100) return false;
+  if (dueDate === "Overdue") return true;
+  if (!dueDate || dueDate === "No due date") return false;
+
+  const dateStr = String(dueDate);
+  const match = dateStr.match(/(\d+)\s+(\w+)/);
+  if (match) {
+    const day = parseInt(match[1]);
+    const monthName = match[2].slice(0, 3);
+    const months: Record<string, number> = {
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
+    };
+    const month = months[monthName];
+    if (month !== undefined) {
+      const dueDateObj = new Date(2026, month, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return dueDateObj < today;
+    }
+  }
+
+  try {
+    const d = new Date(dueDate);
+    if (!isNaN(d.getTime())) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      d.setHours(0, 0, 0, 0);
+      return d < today;
+    }
+  } catch (e) {}
+
+  return false;
+}
+
+function formatRelativeTime(dateStr: string): string {
+  if (!dateStr) return "Recently";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "Recently";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffDays === 0) {
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60)
+      return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  }
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString();
+}
+
 const SUPERVISOR_NAME = "Themba";
 
 export default function SupervisorDashboard() {
@@ -127,7 +194,6 @@ export default function SupervisorDashboard() {
     fetchData();
   }, []);
 
-  // ========== STATISTICS CALCULATIONS ==========
   const total = workflows.length;
   const completed = workflows.filter((w) => w.progress === 100).length;
   const inProgress = workflows.filter(
@@ -143,19 +209,10 @@ export default function SupervisorDashboard() {
         )
       : 0;
 
-  // Overdue calculation
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const overdue = workflows.filter((w) => {
-    if (w.dueDate && w.progress !== 100) {
-      const dueDate = new Date(w.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate < today;
-    }
-    return false;
-  }).length;
+  const overdue = workflows.filter((w) =>
+    isWorkflowOverdue(w.dueDate, w.progress),
+  ).length;
 
-  // Priority distribution
   const highPriority = workflows.filter(
     (w) => w.priority === "High" || w.priority === "HIGH",
   ).length;
@@ -166,16 +223,10 @@ export default function SupervisorDashboard() {
     (w) => w.priority === "Low" || w.priority === "LOW",
   ).length;
 
-  // ========== RISK SCORING ==========
   const workflowsWithRisk = workflows.map((w) => {
     let risk = 0;
-    if (w.dueDate && new Date(w.dueDate) < new Date()) risk += 40;
-    const daysUntilDue = w.dueDate
-      ? Math.ceil(
-          (new Date(w.dueDate).getTime() - new Date().getTime()) /
-            (1000 * 3600 * 24),
-        )
-      : 30;
+    if (isWorkflowOverdue(w.dueDate, w.progress)) risk += 40;
+    const daysUntilDue = 30;
     if (daysUntilDue < 3 && (w.progress || 0) < 30) risk += 30;
     if (daysUntilDue < 7 && (w.progress || 0) < 60) risk += 15;
     if (
@@ -204,7 +255,6 @@ export default function SupervisorDashboard() {
         )
       : 0;
 
-  // ========== TEAM CAPACITY ANALYSIS ==========
   const workloadByUser: Record<
     string,
     { count: number; workflows: string[]; avgProgress: number }
@@ -253,7 +303,6 @@ export default function SupervisorDashboard() {
       avgProgress: Math.round(data.avgProgress),
     }));
 
-  // ========== BOTTLENECK ANALYSIS ==========
   const stageCounts: Record<string, number> = {
     "To Do": 0,
     "In Progress": 0,
@@ -262,9 +311,7 @@ export default function SupervisorDashboard() {
     Completed: 0,
   };
   workflows.forEach((w) => {
-    if (stageCounts[w.status] !== undefined) {
-      stageCounts[w.status]++;
-    }
+    if (stageCounts[w.status] !== undefined) stageCounts[w.status]++;
   });
 
   const bottleneckStages = Object.entries(stageCounts)
@@ -275,33 +322,16 @@ export default function SupervisorDashboard() {
     })
     .map(([stage, count]) => ({ stage, count }));
 
-  // ========== FORECASTING ==========
+  const onTrackCount = workflows.filter(
+    (w) => w.progress >= 50 && w.progress !== 100,
+  ).length;
+  const atRiskCount = workflows.filter(
+    (w) => w.progress < 50 && w.progress !== 100,
+  ).length;
   const likelyToComplete = workflows.filter(
-    (w) =>
-      (w.progress || 0) >= 50 && w.progress !== 100 && w.status !== "Blocked",
+    (w) => w.progress >= 50 && w.progress !== 100,
   ).length;
 
-  const onTrackCount = workflows.filter((w) => {
-    if (!w.dueDate || w.progress === 100) return false;
-    const daysUntilDue = Math.ceil(
-      (new Date(w.dueDate).getTime() - new Date().getTime()) /
-        (1000 * 3600 * 24),
-    );
-    const expectedProgress = Math.min(100, (7 - daysUntilDue) * 14);
-    return (w.progress || 0) >= expectedProgress;
-  }).length;
-
-  const atRiskCount = workflows.filter((w) => {
-    if (!w.dueDate || w.progress === 100) return false;
-    const daysUntilDue = Math.ceil(
-      (new Date(w.dueDate).getTime() - new Date().getTime()) /
-        (1000 * 3600 * 24),
-    );
-    const expectedProgress = Math.min(100, (7 - daysUntilDue) * 14);
-    return (w.progress || 0) < expectedProgress - 20;
-  }).length;
-
-  // ========== PRODUCTIVITY METRICS ==========
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
   const velocity = Math.round((completed / 7) * 100) / 100;
 
@@ -365,7 +395,6 @@ export default function SupervisorDashboard() {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in bg-gradient-to-br from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-      {/* Header with Themba */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -380,40 +409,26 @@ export default function SupervisorDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSelectedTimeframe("week")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              selectedTimeframe === "week"
-                ? "bg-accent text-accent-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            This Week
-          </button>
-          <button
-            onClick={() => setSelectedTimeframe("month")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              selectedTimeframe === "month"
-                ? "bg-accent text-accent-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setSelectedTimeframe("quarter")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              selectedTimeframe === "quarter"
-                ? "bg-accent text-accent-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            This Quarter
-          </button>
+          {["week", "month", "quarter"].map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setSelectedTimeframe(tf)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                selectedTimeframe === tf
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {tf === "week"
+                ? "This Week"
+                : tf === "month"
+                  ? "This Month"
+                  : "This Quarter"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Stats Overview Row 1 */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <div className="stat-card">
           <div className="flex items-center justify-between">
@@ -495,7 +510,6 @@ export default function SupervisorDashboard() {
         </div>
       </div>
 
-      {/* Stats Row 2 - Productivity Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card-depth p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -545,7 +559,6 @@ export default function SupervisorDashboard() {
         </div>
       </div>
 
-      {/* CRITICAL RISK ALERT SECTION */}
       {(criticalRiskWorkflows.length > 0 || highRiskWorkflows.length > 0) && (
         <div
           className={`rounded-xl p-5 border ${
@@ -598,9 +611,7 @@ export default function SupervisorDashboard() {
         </div>
       )}
 
-      {/* Main 2-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT COLUMN: Team Capacity & Workload */}
         <div className="space-y-6">
           <div className="card-depth p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -702,7 +713,6 @@ export default function SupervisorDashboard() {
             </div>
           </div>
 
-          {/* Bottleneck Analysis */}
           <div className="card-depth p-5">
             <div className="flex items-center gap-2 mb-4">
               <GitBranch className="w-5 h-5 text-amber-500" />
@@ -776,7 +786,6 @@ export default function SupervisorDashboard() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Forecasting & Insights */}
         <div className="space-y-6">
           <div className="card-depth p-5 bg-gradient-to-br from-accent/5 to-accent/10">
             <div className="flex items-center gap-2 mb-4">
@@ -931,9 +940,17 @@ export default function SupervisorDashboard() {
                     <Activity className="w-3 h-3 text-accent" />
                   </div>
                   <div>
-                    <p className="text-sm">{activity.message}</p>
+                    <p className="text-sm">
+                      <span className="font-semibold">{activity.user}</span>
+                      <span className="text-muted-foreground ml-1">
+                        {activity.action}
+                      </span>
+                      <span className="font-medium text-accent ml-1">
+                        {activity.workflowTitle}
+                      </span>
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(activity.createdAt).toLocaleString()}
+                      {formatRelativeTime(activity.time)}
                     </p>
                   </div>
                 </div>
@@ -946,6 +963,18 @@ export default function SupervisorDashboard() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Calendar View */}
+      <div className="card-depth p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="w-5 h-5 text-accent" />
+          <h2 className="font-semibold text-foreground">Workflow Calendar</h2>
+          <span className="badge badge-progress text-xs">
+            Click on any event to view
+          </span>
+        </div>
+        <CalendarView workflows={workflows} />
       </div>
 
       {/* Priority Distribution Chart */}

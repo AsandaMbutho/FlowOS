@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       user: a.user?.name ?? "System",
       action: detectAction(a.action),
       details: a.details ?? a.action,
-      time: a.createdAt.toISOString(),
+      time: new Date(a.createdAt).toISOString(),
       userColor: colorForName(a.user?.name ?? ""),
       workflowId: a.workflowId,
       workflowTitle: a.workflow?.title ?? "",

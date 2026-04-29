@@ -14,46 +14,42 @@ interface Activity {
   user: string;
   action: string;
   details: string;
-  time: string;
+  time: string | number;
   workflowTitle: string;
   userColor: string;
 }
 
-function formatDate(dateValue: any): string {
-  try {
-    if (!dateValue) return "Recently";
+function formatRelativeTime(dateStr: string | number): string {
+  if (!dateStr) return "Recently";
 
-    let dateStr = String(dateValue);
-
-    // Remove any spaces
-    dateStr = dateStr.replace(/\s/g, "");
-
-    // Replace H with T (fix malformed date)
-    dateStr = dateStr.replace("H", "T");
-
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "Recently";
-
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffDays === 0) {
-      if (diffMins < 1) return "Just now";
-      if (diffMins < 60)
-        return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  let date: Date;
+  if (typeof dateStr === "number") {
+    date = new Date(dateStr < 1e12 ? dateStr * 1000 : dateStr);
+  } else {
+    date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      date = new Date(dateStr.replace(" ", "T"));
     }
-
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-
-    return date.toLocaleDateString();
-  } catch {
-    return "Recently";
   }
+
+  if (isNaN(date.getTime())) return "Recently";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffDays === 0) {
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  }
+
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+
+  return date.toLocaleDateString();
 }
 
 function getActivityIcon(action: string) {
@@ -78,16 +74,21 @@ export function ActivityFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/activities?limit=10")
-      .then((res) => res.json())
-      .then((data) => {
+    async function loadActivities() {
+      try {
+        const response = await fetch("/api/activities?limit=10");
+        const data = await response.json();
+        console.log("activity time sample:", data[0]?.time);
         setActivities(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error("Failed to load activities:", error);
         setActivities([]);
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    loadActivities();
   }, []);
 
   if (loading) {
@@ -144,7 +145,7 @@ export function ActivityFeed() {
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatDate(activity.time)}
+                  {formatRelativeTime(activity.time)}
                 </p>
               </div>
             </div>

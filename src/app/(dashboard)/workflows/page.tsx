@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  MoreVertical,
   LayoutGrid,
   List,
   ChevronDown,
@@ -20,6 +19,7 @@ import {
   X,
   Trash2,
   Loader2,
+  Calendar,
 } from "lucide-react";
 
 type Priority = "HIGH" | "MEDIUM" | "LOW";
@@ -171,9 +171,8 @@ export default function WorkflowsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Partial<FormState>>({});
   const [saving, setSaving] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [tempDate, setTempDate] = useState("");
 
   const fetchWorkflows = async () => {
     try {
@@ -192,6 +191,25 @@ export default function WorkflowsPage() {
   useEffect(() => {
     fetchWorkflows();
   }, []);
+
+  const updateDueDate = async (id: string, dueDate: string) => {
+    try {
+      const res = await fetch(`/api/workflows/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dueDate }),
+      });
+      if (res.ok) {
+        await fetchWorkflows();
+        setEditingDateId(null);
+      } else {
+        alert("Failed to update due date");
+      }
+    } catch (error) {
+      console.error("Failed to update due date:", error);
+      alert("Failed to update due date");
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -252,18 +270,18 @@ export default function WorkflowsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    setDeleting(true);
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     try {
       const res = await fetch(`/api/workflows/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      setItems((prev) => prev.filter((w) => w.id !== id));
-      setDeleteId(null);
-      setOpenMenuId(null);
-    } catch {
-      alert("Failed to delete workflow. Try again.");
-    } finally {
-      setDeleting(false);
+      if (res.ok) {
+        await fetchWorkflows();
+      } else {
+        alert("Failed to delete workflow");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete workflow");
     }
   };
 
@@ -319,7 +337,7 @@ export default function WorkflowsPage() {
         </Button>
       </div>
 
-      {/* Summary strip — 2 cols on mobile, 4 on md+ */}
+      {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         {[
           {
@@ -502,7 +520,7 @@ export default function WorkflowsPage() {
         </div>
       )}
 
-      {/* Grid view — 1 col mobile, 2 tablet, 3 desktop */}
+      {/* Grid view */}
       {view === "grid" && filtered.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
           {filtered.map((w) => (
@@ -512,50 +530,111 @@ export default function WorkflowsPage() {
               className={`p-4 hover:shadow-lg transition-all border-l-4 cursor-pointer ${PRIORITY_CFG[w.priority].border}`}
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0 pr-2">
-                  <h3 className="font-semibold text-sm leading-snug">
-                    {w.title}
-                  </h3>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm leading-snug">
+                      {w.title}
+                    </h3>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(w.id, w.title);
+                      }}
+                      className="text-red-400 hover:text-red-600 transition-colors"
+                      title="Delete workflow"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <p className="text-xs text-gray-400 mt-0.5 truncate">
                     {w.description}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {w.team} ·{" "}
-                    <span
-                      className={
-                        w.dueDate === "Overdue"
-                          ? "text-red-500 font-semibold"
-                          : ""
-                      }
-                    >
-                      {w.dueDate}
-                    </span>
-                  </p>
-                </div>
-                <div className="relative shrink-0">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenuId(openMenuId === w.id ? null : w.id);
-                    }}
-                    className="p-1 rounded hover:bg-gray-100"
-                  >
-                    <MoreVertical className="h-4 w-4 text-gray-400" />
-                  </button>
-                  {openMenuId === w.id && (
-                    <div className="absolute right-0 top-7 bg-white border rounded-xl shadow-lg z-20 py-1 min-w-[130px]">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteId(w.id);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </button>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-gray-400">{w.team}</p>
+                    <div className="flex items-center gap-1">
+                      {editingDateId === w.id ? (
+                        <>
+                          <Input
+                            type="date"
+                            value={tempDate}
+                            onChange={(e) => setTempDate(e.target.value)}
+                            className="w-28 h-6 text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateDueDate(w.id, tempDate);
+                            }}
+                            className="text-green-500 text-xs hover:underline"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingDateId(null);
+                            }}
+                            className="text-gray-500 text-xs hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            className={`text-xs cursor-pointer hover:text-blue-500 ${
+                              w.dueDate === "Overdue"
+                                ? "text-red-500 font-semibold"
+                                : "text-gray-500"
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              let dateValue = "";
+                              if (
+                                w.dueDate &&
+                                w.dueDate !== "Overdue" &&
+                                w.dueDate !== "No due date"
+                              ) {
+                                const parts =
+                                  w.dueDate.match(/(\d+)\/(\d+)\/(\d+)/);
+                                if (parts) {
+                                  dateValue = `${parts[3]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+                                }
+                              }
+                              setTempDate(dateValue);
+                              setEditingDateId(w.id);
+                            }}
+                          >
+                            {w.dueDate}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              let dateValue = "";
+                              if (
+                                w.dueDate &&
+                                w.dueDate !== "Overdue" &&
+                                w.dueDate !== "No due date"
+                              ) {
+                                const parts =
+                                  w.dueDate.match(/(\d+)\/(\d+)\/(\d+)/);
+                                if (parts) {
+                                  dateValue = `${parts[3]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+                                }
+                              }
+                              setTempDate(dateValue);
+                              setEditingDateId(w.id);
+                            }}
+                            className="text-gray-400 hover:text-blue-500 transition-colors"
+                            title="Edit due date"
+                          >
+                            <Calendar className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5 mb-3">
@@ -606,7 +685,6 @@ export default function WorkflowsPage() {
                     {w.assignee.name}
                   </span>
                 </div>
-                {/* FIXED: Changed from tasksLeft === 0 to progress === 100 */}
                 <span className="text-xs text-gray-400">
                   {w.progress === 100 ? "✓ Done" : `${w.tasksLeft} tasks left`}
                 </span>
@@ -616,7 +694,7 @@ export default function WorkflowsPage() {
         </div>
       )}
 
-      {/* List view — hidden on mobile, shown on sm+ */}
+      {/* List view */}
       {view === "list" && filtered.length > 0 && (
         <div className="border rounded-xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
@@ -705,9 +783,9 @@ export default function WorkflowsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDeleteId(w.id);
+                        handleDelete(w.id, w.title);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600"
+                      className="text-red-400 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -720,17 +798,11 @@ export default function WorkflowsPage() {
       )}
 
       {/* Backdrop */}
-      {(drawerOpen || openMenuId) && (
-        <div
-          className="fixed inset-0 bg-black/20 z-30"
-          onClick={() => {
-            closeDrawer();
-            setOpenMenuId(null);
-          }}
-        />
+      {drawerOpen && (
+        <div className="fixed inset-0 bg-black/20 z-30" onClick={closeDrawer} />
       )}
 
-      {/* Drawer — full width on mobile */}
+      {/* Drawer */}
       <div
         className={`fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-2xl z-40 flex flex-col transition-transform duration-300 ease-in-out ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
       >
@@ -840,47 +912,6 @@ export default function WorkflowsPage() {
           </Button>
         </div>
       </div>
-
-      {/* Delete modal */}
-      {deleteId && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 z-50"
-            onClick={() => !deleting && setDeleteId(null)}
-          />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-6 w-[90vw] max-w-sm">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-6 h-6 text-red-500" />
-            </div>
-            <h3 className="text-lg font-bold text-center">Delete Workflow?</h3>
-            <p className="text-sm text-gray-500 text-center mt-1 mb-5">
-              "{items.find((w) => w.id === deleteId)?.title}" will be
-              permanently removed.
-            </p>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setDeleteId(null)}
-                disabled={deleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
-                onClick={() => handleDelete(deleteId)}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Delete"
-                )}
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

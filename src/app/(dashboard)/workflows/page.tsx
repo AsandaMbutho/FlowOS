@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   Loader2,
   Calendar,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 type Priority = "HIGH" | "MEDIUM" | "LOW";
 type Status = "In Progress" | "Review" | "Blocked" | "Completed" | "To Do";
@@ -157,6 +158,9 @@ function SelectInput({
 
 export default function WorkflowsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const currentUser = session?.user?.name || "";
 
   const [items, setItems] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,6 +169,7 @@ export default function WorkflowsPage() {
   const [statusFilter, setStatusFilter] = useState<Status | "All">("All");
   const [teamFilter, setTeamFilter] = useState<string>("All");
   const [priorityFilter, setPriority] = useState<Priority | "All">("All");
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("All");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -191,6 +196,21 @@ export default function WorkflowsPage() {
   useEffect(() => {
     fetchWorkflows();
   }, []);
+
+  // Read filter from URL on initial load
+  useEffect(() => {
+    const filterParam = searchParams.get("filter");
+    if (!filterParam) return;
+
+    if (filterParam === "priority:high") {
+      setPriority("HIGH");
+    } else if (filterParam === "stage:DONE") {
+      setStatusFilter("Completed");
+    } else if (filterParam.startsWith("assigned-to:")) {
+      const assigneeName = filterParam.replace("assigned-to:", "");
+      setAssigneeFilter(assigneeName);
+    }
+  }, [searchParams]);
 
   const updateDueDate = async (id: string, dueDate: string) => {
     try {
@@ -221,14 +241,21 @@ export default function WorkflowsPage() {
         w.assignee.name.toLowerCase().includes(q) ||
         w.description.toLowerCase().includes(q) ||
         w.tags.some((t) => t.toLowerCase().includes(q));
+
+      let matchAssignee = true;
+      if (assigneeFilter !== "All") {
+        matchAssignee = w.assignee.name === assigneeFilter;
+      }
+
       return (
         matchSearch &&
         (statusFilter === "All" || w.status === statusFilter) &&
         (teamFilter === "All" || w.team === teamFilter) &&
-        (priorityFilter === "All" || w.priority === priorityFilter)
+        (priorityFilter === "All" || w.priority === priorityFilter) &&
+        matchAssignee
       );
     });
-  }, [items, search, statusFilter, teamFilter, priorityFilter]);
+  }, [items, search, statusFilter, teamFilter, priorityFilter, assigneeFilter]);
 
   const total = items.length;
   const inProgress = items.filter((w) => w.status === "In Progress").length;
@@ -238,6 +265,7 @@ export default function WorkflowsPage() {
     statusFilter !== "All",
     teamFilter !== "All",
     priorityFilter !== "All",
+    assigneeFilter !== "All",
   ].filter(Boolean).length;
 
   const validate = (): boolean => {
@@ -298,7 +326,9 @@ export default function WorkflowsPage() {
     setStatusFilter("All");
     setTeamFilter("All");
     setPriority("All");
+    setAssigneeFilter("All");
     setSearch("");
+    router.push("/workflows");
   };
 
   if (loading)

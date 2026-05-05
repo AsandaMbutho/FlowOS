@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enZA } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import type { Event, stringOrDate } from "react-big-calendar";
 
 const locales = {
   "en-ZA": enZA,
@@ -35,7 +34,7 @@ interface CalendarEvent {
 function parseDueDate(dueDate: any): Date | null {
   if (!dueDate) return null;
   if (dueDate === "Overdue") return new Date(2026, 3, 25);
-  if (dueDate === "Today") return new Date(2026, 3, 28);
+  if (dueDate === "Today") return new Date();
   if (dueDate === "Thursday") return new Date(2026, 4, 1);
   if (dueDate === "Friday") return new Date(2026, 4, 1);
 
@@ -44,11 +43,12 @@ function parseDueDate(dueDate: any): Date | null {
     if (!isNaN(date.getTime())) return date;
   } catch (e) {}
 
-  return new Date(2026, 3, 28);
+  return new Date();
 }
 
 export function CalendarView({ workflows }: { workflows: any[] }) {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 28));
+  // FIXED: Use today's date instead of hardcoded April 28
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<"month" | "week" | "day">(
     "month",
   );
@@ -80,21 +80,22 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
   const handleNavigate = (action: "TODAY" | "PREV" | "NEXT") => {
     const newDate = new Date(currentDate);
     if (action === "TODAY") {
-      newDate.setDate(28);
+      setCurrentDate(new Date());
     } else if (action === "PREV") {
       if (currentView === "month") {
         newDate.setMonth(newDate.getMonth() - 1);
       } else {
         newDate.setDate(newDate.getDate() - 1);
       }
+      setCurrentDate(newDate);
     } else if (action === "NEXT") {
       if (currentView === "month") {
         newDate.setMonth(newDate.getMonth() + 1);
       } else {
         newDate.setDate(newDate.getDate() + 1);
       }
+      setCurrentDate(newDate);
     }
-    setCurrentDate(newDate);
   };
 
   const formatViewLabel = () => {
@@ -110,10 +111,8 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
     }
   };
 
-  const eventStyleGetter = (
-    event: CalendarEvent,
-  ): { style: React.CSSProperties } => {
-    const today = new Date(2026, 3, 28);
+  const eventStyleGetter = (event: CalendarEvent) => {
+    const today = new Date();
     today.setHours(0, 0, 0, 0);
     const eventDate = new Date(event.start);
     eventDate.setHours(0, 0, 0, 0);

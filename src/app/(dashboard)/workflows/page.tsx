@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,8 @@ function SelectInput({
   );
 }
 
-export default function WorkflowsPage() {
+// Move the main component logic into a separate component that uses useSearchParams
+function WorkflowsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -943,5 +945,20 @@ export default function WorkflowsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main export with Suspense boundary
+export default function WorkflowsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin text-[#10b981]" />
+        </div>
+      }
+    >
+      <WorkflowsContent />
+    </Suspense>
   );
 }

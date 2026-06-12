@@ -1,72 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Users,
-  CheckCircle,
-  MessageSquare,
-  Edit3,
-  AlertCircle,
-} from "lucide-react";
+import { Users } from "lucide-react";
 
 interface Activity {
   id: string;
-  user: string;
+  userName: string;
   action: string;
-  details: string;
-  time: string | number;
   workflowTitle: string;
-  userColor: string;
-}
-
-function formatRelativeTime(dateStr: string | number): string {
-  if (!dateStr) return "Recently";
-
-  let date: Date;
-  if (typeof dateStr === "number") {
-    date = new Date(dateStr < 1e12 ? dateStr * 1000 : dateStr);
-  } else {
-    date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
-      date = new Date(dateStr.replace(" ", "T"));
-    }
-  }
-
-  if (isNaN(date.getTime())) return "Recently";
-
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffDays === 0) {
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
-    return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  }
-
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-
-  return date.toLocaleDateString();
-}
-
-function getActivityIcon(action: string) {
-  const actionLower = action.toLowerCase();
-  if (actionLower.includes("complete")) {
-    return <CheckCircle className="w-4 h-4 text-emerald-500" />;
-  }
-  if (actionLower.includes("comment")) {
-    return <MessageSquare className="w-4 h-4 text-teal-500" />;
-  }
-  if (actionLower.includes("update") || actionLower.includes("progress")) {
-    return <Edit3 className="w-4 h-4 text-blue-500" />;
-  }
-  if (actionLower.includes("overdue") || actionLower.includes("block")) {
-    return <AlertCircle className="w-4 h-4 text-red-500" />;
-  }
-  return <Users className="w-4 h-4 text-teal-600" />;
+  createdAt: string;
 }
 
 export function ActivityFeed() {
@@ -74,33 +16,25 @@ export function ActivityFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadActivities() {
-      try {
-        const response = await fetch("/api/activities?limit=10");
-        const data = await response.json();
-        console.log("activity time sample:", data[0]?.time);
+    fetch("/api/activities?limit=10")
+      .then((res) => res.json())
+      .then((data) => {
         setActivities(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to load activities:", error);
-        setActivities([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadActivities();
+      })
+      .catch(() => setActivities([]))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="card-depth p-0 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
         <div className="p-5 space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="animate-pulse flex gap-3">
-              <div className="w-8 h-8 bg-muted rounded-full"></div>
+              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
               <div className="flex-1">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
             </div>
           ))}
@@ -109,48 +43,35 @@ export function ActivityFeed() {
     );
   }
 
-  if (activities.length === 0) {
-    return (
-      <div className="card-depth p-5 text-center">
-        <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">No recent activity</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="card-depth p-0 overflow-hidden">
-      <div className="divide-y divide-border max-h-96 overflow-y-auto custom-scrollbar">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
+      <div className="divide-y max-h-96 overflow-y-auto">
         {activities.map((activity) => (
-          <div key={activity.id} className="activity-item p-4">
+          <div key={activity.id} className="p-4 hover:bg-gray-50">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-teal-50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-teal-100 transition-colors">
-                {getActivityIcon(activity.action)}
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Users className="w-4 h-4 text-teal-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-foreground/90">
-                  <span className="font-semibold text-foreground">
-                    {activity.user}
-                  </span>
-                  <span className="text-muted-foreground ml-2">
-                    {activity.action}
-                  </span>
-                  <span className="font-medium text-accent ml-2">
+                <p className="text-sm">
+                  <span className="font-medium">{activity.userName}</span>
+                  <span className="text-gray-600 ml-2">{activity.action}</span>
+                  <span className="font-medium ml-2">
                     {activity.workflowTitle}
                   </span>
                 </p>
-                {activity.details && activity.details !== activity.action && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {activity.details}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatRelativeTime(activity.time)}
+                <p className="text-xs text-gray-400 mt-1">
+                  {new Date(activity.createdAt).toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
         ))}
+        {activities.length === 0 && (
+          <div className="p-8 text-center text-gray-500">
+            No recent team activity.
+          </div>
+        )}
       </div>
     </div>
   );

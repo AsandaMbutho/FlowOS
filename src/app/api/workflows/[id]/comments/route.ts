@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createNotification } from "@/lib/notifications";
-import { triggerMentionEmail } from "@/lib/email-triggers";
+import { sendMentionEmail } from "@/lib/email";
 
 // GET /api/workflows/[id]/comments
 export async function GET(
@@ -90,20 +90,27 @@ export async function POST(
         workflowId: id,
       });
 
-      // Send email notification (fire and await - critical for Vercel)
-      const emailResult = await triggerMentionEmail(
-        user.id,
-        author?.name ?? "Someone",
-        id,
-        body.trim(),
-      );
-
-      if (emailResult.success) {
-        console.log(`📧 Email sent to ${user.name} for mention`);
-      } else {
-        console.log(
-          `⚠️ Failed to send email to ${user.name}: ${emailResult.error}`,
+      // Send email notification
+      if (user.email) {
+        const emailResult = await sendMentionEmail(
+          user.email,
+          author?.name ?? "Someone",
+          workflow?.title ?? "a workflow",
+          body.trim(),
+          id,
         );
+
+        if (emailResult.success) {
+          console.log(
+            `📧 Email sent to ${user.name} (${user.email}) for mention`,
+          );
+        } else {
+          console.log(
+            `⚠️ Failed to send email to ${user.name}: ${emailResult.error}`,
+          );
+        }
+      } else {
+        console.log(`⚠️ No email address for user: ${user.name}`);
       }
     }
 

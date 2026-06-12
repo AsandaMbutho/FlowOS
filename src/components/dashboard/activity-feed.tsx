@@ -5,10 +5,10 @@ import { Users } from "lucide-react";
 
 interface Activity {
   id: string;
-  userName: string;
+  user: string;
   action: string;
-  workflowTitle: string;
-  createdAt: string;
+  details: string;
+  time: string;
 }
 
 export function ActivityFeed() {
@@ -24,6 +24,26 @@ export function ActivityFeed() {
       .catch(() => setActivities([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "Just now";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "Recently";
+
+    // Format as dd/mm/yy
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString().slice(-2);
+
+    // Time in 12-hour format
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+
+    return `${day}/${month}/${year}, ${hours}:${minutes} ${ampm}`;
+  };
 
   if (loading) {
     return (
@@ -54,14 +74,18 @@ export function ActivityFeed() {
               </div>
               <div className="flex-1">
                 <p className="text-sm">
-                  <span className="font-medium">{activity.userName}</span>
+                  <span className="font-medium">
+                    {activity.user || "Someone"}
+                  </span>
                   <span className="text-gray-600 ml-2">{activity.action}</span>
                   <span className="font-medium ml-2">
-                    {activity.workflowTitle}
+                    {activity.details
+                      ?.replace("Updated workflow: ", "")
+                      .replace("New workflow: ", "")}
                   </span>
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {new Date(activity.createdAt).toLocaleString()}
+                  {formatDate(activity.time)}
                 </p>
               </div>
             </div>

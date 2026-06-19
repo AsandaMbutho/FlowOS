@@ -22,6 +22,7 @@ export async function GET(
       include: {
         assignee: { select: { id: true, name: true, email: true } },
         tasks: true,
+        files: true,
         activities: {
           include: { user: { select: { name: true } } },
           orderBy: { createdAt: "desc" },
@@ -72,13 +73,11 @@ export async function PATCH(
       ? await db.user.findFirst({ where: { name: assigneeName } })
       : undefined;
 
-    // Fix: Handle dueDate with timezone to prevent day shift
     let fixedDueDate = undefined;
     if (dueDate !== undefined) {
       if (dueDate === null || dueDate === "") {
         fixedDueDate = null;
       } else {
-        // Parse the date and set to noon UTC to avoid timezone issues
         const dateObj = new Date(dueDate);
         if (!isNaN(dateObj.getTime())) {
           fixedDueDate = new Date(
@@ -95,6 +94,18 @@ export async function PATCH(
       }
     }
 
+    let completedAt = undefined;
+    if (progress !== undefined) {
+      const isNowCompleted = progress === 100;
+      const wasPreviouslyCompleted = previous?.stage === "DONE";
+
+      if (isNowCompleted && !wasPreviouslyCompleted) {
+        completedAt = new Date();
+      } else if (!isNowCompleted) {
+        completedAt = null;
+      }
+    }
+
     const updated = await db.workflow.update({
       where: { id },
       data: {
@@ -106,10 +117,12 @@ export async function PATCH(
         ...(team !== undefined && { team }),
         ...(fixedDueDate !== undefined && { dueDate: fixedDueDate }),
         ...(assignee !== undefined && { assigneeId: assignee?.id ?? null }),
+        ...(completedAt !== undefined && { completedAt }),
       },
       include: {
         assignee: { select: { id: true, name: true } },
         tasks: { select: { id: true, completed: true } },
+        files: true,
       },
     });
 
@@ -159,12 +172,12 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Delete all related records
     await db.notification.deleteMany({ where: { workflowId: id } });
     await db.activity.deleteMany({ where: { workflowId: id } });
     await db.comment.deleteMany({ where: { workflowId: id } });
     await db.task.deleteMany({ where: { workflowId: id } });
     await db.workflowStageHistory.deleteMany({ where: { workflowId: id } });
+    await db.file.deleteMany({ where: { workflowId: id } });
     await db.workflow.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

@@ -1,66 +1,59 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { NotifType } from "@prisma/client";
-import { checkOverdueWorkflows } from "@/lib/notifications";
 
-export async function GET() {
+// GET /api/notifications/[id]
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
-    await checkOverdueWorkflows();
-    const notifications = await db.notification.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
+    const notification = await db.notification.findUnique({
+      where: { id: params.id },
     });
-    return NextResponse.json(notifications);
+    if (!notification) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json(notification);
   } catch (error) {
-    console.error("GET /api/notifications error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch notifications" },
+      { error: "Failed to fetch notification" },
       { status: 500 },
     );
   }
 }
 
-export async function POST(request: Request) {
+// PATCH /api/notifications/[id] — mark single notification as read
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
-    const { type, title, message, userId, workflowId } = await request.json();
-    const notification = await db.notification.create({
-      data: {
-        type: type as NotifType,
-        title,
-        message,
-        userId: userId ?? null,
-        workflowId: workflowId ?? null,
-      },
+    const notification = await db.notification.update({
+      where: { id: params.id },
+      data: { read: true },
     });
-    return NextResponse.json(notification, { status: 201 });
+    return NextResponse.json(notification);
   } catch (error) {
-    console.error("POST /api/notifications error:", error);
     return NextResponse.json(
-      { error: "Failed to create notification" },
+      { error: "Failed to update notification" },
       { status: 500 },
     );
   }
 }
 
-export async function PATCH() {
+// DELETE /api/notifications/[id] — delete single notification
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
-    await db.notification.updateMany({ data: { read: true } });
+    await db.notification.delete({
+      where: { id: params.id },
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to mark all as read" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function DELETE() {
-  try {
-    await db.notification.deleteMany({});
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to clear notifications" },
+      { error: "Failed to delete notification" },
       { status: 500 },
     );
   }

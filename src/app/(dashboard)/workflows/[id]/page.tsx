@@ -26,8 +26,14 @@ import {
   AtSign,
   Zap,
   X,
+  Upload,
+  Download,
+  File,
+  FileText,
+  Image as ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,6 +65,16 @@ interface Comment {
   mentions: CommentMention[];
 }
 
+interface FileData {
+  id: string;
+  filename: string;
+  originalName: string;
+  url: string;
+  size: number;
+  mimeType: string;
+  createdAt: string;
+}
+
 interface RawWorkflow {
   id: string;
   title: string;
@@ -69,8 +85,10 @@ interface RawWorkflow {
   tags: string;
   dueDate: string | null;
   progress: number;
+  completedAt: string | null;
   assignee: { id: string; name: string; email: string } | null;
   tasks: Task[];
+  files: FileData[];
   activities: {
     id: string;
     action: string;
@@ -149,9 +167,22 @@ function statusToStage(status: Status): Stage {
   return map[status];
 }
 
-function formatDueDate(dateStr: string | null): string {
-  if (!dateStr) return "No due date";
-  const date = new Date(dateStr);
+function getDisplayDate(
+  dueDate: string | null,
+  completedAt: string | null,
+  progress: number,
+): string {
+  if (progress === 100 && completedAt) {
+    const date = new Date(completedAt);
+    return `Completed on ${date.toLocaleDateString("en-ZA", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })}`;
+  }
+
+  if (!dueDate) return "No due date";
+  const date = new Date(dueDate);
   const diff = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   if (diff < 0) return "Overdue";
   if (diff === 0) return "Today";
@@ -188,7 +219,6 @@ const progressColor = (p: number) =>
         ? "bg-yellow-500"
         : "bg-red-400";
 
-// Render comment body with highlighted @mentions
 function renderBody(body: string) {
   const parts = body.split(/(@\w+)/g);
   return parts.map((part, i) =>
@@ -212,6 +242,7 @@ export default function WorkflowDetailPage() {
   const [progress, setProgress] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [files, setFiles] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -219,6 +250,10 @@ export default function WorkflowDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [newTask, setNewTask] = useState("");
   const [addingTask, setAddingTask] = useState(false);
+
+  // File upload state
+  const [uploading, setUploading] = useState(false);
+  const [deletingFile, setDeletingFile] = useState<string | null>(null);
 
   // Comment state
   const [commentBody, setCommentBody] = useState("");
@@ -253,6 +288,7 @@ export default function WorkflowDetailPage() {
         setStatus(stageToStatus(data.stage));
         setProgress(data.progress);
         setTasks(data.tasks);
+        setFiles(data.files || []);
       })
       .catch(() => setError("Workflow not found"))
       .finally(() => setLoading(false));
@@ -291,6 +327,76 @@ export default function WorkflowDetailPage() {
       setSaving(false);
     }
   };
+
+  // ── File upload ──────────────────────────────────────────────────────────
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File too large. Max 10MB");
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`/api/workflows/${id}/files`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const newFile = await res.json();
+        setFiles((prev) => [newFile, ...prev]);
+      } else {
+        alert("Failed to upload file");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload file");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    if (!confirm("Delete this file?")) return;
+    setDeletingFile(fileId);
+    try {
+      const res = await fetch(`/api/workflows/${id}/files?fileId=${fileId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setFiles((prev) => prev.filter((f) => f.id !== fileId));
+      } else {
+        alert("Failed to delete file");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete file");
+    } finally {
+      setDeletingFile(null);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith("image/"))
+      return <ImageIcon className="w-4 h-4 text-blue-500" />;
+    if (mimeType === "application/pdf")
+      return <FileText className="w-4 h-4 text-red-500" />;
+    return <File className="w-4 h-4 text-gray-500" />;
+  };
+
+  const isImage = (mimeType: string) => mimeType.startsWith("image/");
 
   // ── Toggle task ───────────────────────────────────────────────────────────
   const handleToggleTask = async (taskId: string) => {
@@ -371,7 +477,6 @@ export default function WorkflowDetailPage() {
     const val = e.target.value;
     setCommentBody(val);
 
-    // Detect @mention trigger
     const cursor = e.target.selectionStart;
     const textBefore = val.slice(0, cursor);
     const match = textBefore.match(/@(\w*)$/);
@@ -438,7 +543,6 @@ export default function WorkflowDetailPage() {
     if (!commentBody.trim()) return;
     setPostingComment(true);
 
-    // Extract @mentions
     const mentionedNames = [...commentBody.matchAll(/@(\w+)/g)]
       .map((m) => m[1])
       .filter((name) => TEAM_MEMBERS.includes(name));
@@ -476,7 +580,6 @@ export default function WorkflowDetailPage() {
     if (!dailyText.trim()) return;
     setDailySaving(true);
     try {
-      // Post comment
       const mentionedNames = [...dailyText.matchAll(/@(\w+)/g)]
         .map((m) => m[1])
         .filter((name) => TEAM_MEMBERS.includes(name));
@@ -493,7 +596,6 @@ export default function WorkflowDetailPage() {
       const comment = await commentRes.json();
       setComments((prev) => [...prev, comment]);
 
-      // Update progress if changed
       const newProgress = dailyProgress ?? progress;
       const res = await fetch(`/api/workflows/${id}`, {
         method: "PATCH",
@@ -537,7 +639,11 @@ export default function WorkflowDetailPage() {
     );
 
   const tags = safeParseJson(raw.tags);
-  const dueDate = formatDueDate(raw.dueDate);
+  const displayDate = getDisplayDate(
+    raw.dueDate,
+    raw.completedAt,
+    raw.progress,
+  );
   const assigneeName = raw.assignee?.name ?? "Unassigned";
   const completedTasks = tasks.filter((t) => t.completed).length;
   const totalTasks = tasks.length;
@@ -634,10 +740,14 @@ export default function WorkflowDetailPage() {
               <Calendar className="w-4 h-4" />
               <span
                 className={
-                  dueDate === "Overdue" ? "text-red-500 font-semibold" : ""
+                  displayDate === "Overdue"
+                    ? "text-red-500 font-semibold"
+                    : displayDate.startsWith("Completed")
+                      ? "text-green-600 font-semibold"
+                      : ""
                 }
               >
-                {dueDate}
+                {displayDate}
               </span>
             </div>
             {tags.length > 0 && (
@@ -751,20 +861,17 @@ export default function WorkflowDetailPage() {
                 key={task.id}
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${task.completed ? "bg-green-50 border-green-100" : "bg-gray-50 border-gray-100"}`}
               >
-                {/* Checkbox */}
                 <div
                   onClick={() => handleToggleTask(task.id)}
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 cursor-pointer transition-all ${task.completed ? "bg-green-500 border-green-500" : "border-gray-300 hover:border-green-400"}`}
                 >
                   {task.completed && <Check className="w-3 h-3 text-white" />}
                 </div>
-                {/* Title */}
                 <span
                   className={`text-sm flex-1 ${task.completed ? "line-through text-gray-400" : "text-gray-700"}`}
                 >
                   {task.title}
                 </span>
-                {/* Assignee */}
                 <div className="relative">
                   <button
                     onClick={() =>
@@ -817,7 +924,6 @@ export default function WorkflowDetailPage() {
               </div>
             ))}
           </div>
-          {/* Add task */}
           <div className="flex gap-2">
             <Input
               placeholder="Add a new task…"
@@ -841,7 +947,111 @@ export default function WorkflowDetailPage() {
           </div>
         </div>
 
-        {/* Comments */}
+        {/* ─── FILES SECTION ─── */}
+        <div className="bg-white rounded-2xl border p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Files
+              {files.length > 0 && (
+                <span className="text-xs text-gray-400 font-normal">
+                  ({files.length})
+                </span>
+              )}
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              className="relative overflow-hidden"
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </>
+              )}
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                disabled={uploading}
+              />
+            </Button>
+          </div>
+
+          {files.length === 0 ? (
+            <div className="text-sm text-gray-400 text-center py-6 border-2 border-dashed rounded-lg">
+              No files uploaded yet
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {files.map((file) => (
+                <div
+                  key={file.id}
+                  className="border rounded-lg p-3 hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="flex items-start gap-3">
+                    {isImage(file.mimeType) ? (
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <img
+                          src={file.url}
+                          alt={file.originalName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        {getFileIcon(file.mimeType)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm font-medium text-gray-900 truncate"
+                        title={file.originalName}
+                      >
+                        {file.originalName}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {formatFileSize(file.size)}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-500 transition-colors p-1"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                      <button
+                        onClick={() => handleDeleteFile(file.id)}
+                        disabled={deletingFile === file.id}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        title="Delete"
+                      >
+                        {deletingFile === file.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ─── COMMENTS SECTION ─── */}
         <div className="bg-white rounded-2xl border p-6">
           <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
@@ -853,7 +1063,6 @@ export default function WorkflowDetailPage() {
             )}
           </h2>
 
-          {/* Comment list */}
           <div className="space-y-4 mb-6">
             {comments.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-4">
@@ -896,7 +1105,6 @@ export default function WorkflowDetailPage() {
             ))}
           </div>
 
-          {/* Comment input */}
           <div className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
               A
@@ -924,7 +1132,6 @@ export default function WorkflowDetailPage() {
                   )}
                 </button>
               </div>
-              {/* @mention suggestions */}
               {mentionSuggestions.length > 0 && (
                 <div className="absolute bottom-full left-0 mb-1 bg-white border rounded-xl shadow-lg z-20 py-1 min-w-[160px]">
                   <p className="text-xs text-gray-400 px-3 py-1">
@@ -981,7 +1188,6 @@ export default function WorkflowDetailPage() {
         )}
       </div>
 
-      {/* Close assignee dropdown on outside click */}
       {assigneeDropdown && (
         <div
           className="fixed inset-0 z-10"
@@ -989,7 +1195,6 @@ export default function WorkflowDetailPage() {
         />
       )}
 
-      {/* Daily Update Modal */}
       {dailyOpen && (
         <>
           <div
@@ -997,7 +1202,6 @@ export default function WorkflowDetailPage() {
             onClick={() => !dailySaving && setDailyOpen(false)}
           />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-6 w-[90vw] max-w-lg">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
@@ -1016,7 +1220,6 @@ export default function WorkflowDetailPage() {
               </button>
             </div>
 
-            {/* What did you do today */}
             <div className="mb-4">
               <label className="text-xs font-semibold text-gray-600 mb-1.5 block">
                 What did you work on today? *
@@ -1036,7 +1239,6 @@ export default function WorkflowDetailPage() {
               </p>
             </div>
 
-            {/* Progress update */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold text-gray-600">
@@ -1062,7 +1264,6 @@ export default function WorkflowDetailPage() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3">
               <Button
                 variant="outline"

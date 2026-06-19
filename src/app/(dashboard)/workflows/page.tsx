@@ -46,6 +46,7 @@ interface Workflow {
   tags: string[];
   assignee: Assignee;
   dueDate: string;
+  completedAt?: string | null;
 }
 
 const STATUS_CFG: Record<Status, { bg: string; text: string }> = {
@@ -233,6 +234,25 @@ function WorkflowsContent() {
     }
   };
 
+  const getDisplayStatus = (workflow: Workflow): string => {
+    if (workflow.progress === 100) {
+      return "Completed";
+    }
+    return workflow.status;
+  };
+
+  const getDisplayDueDate = (workflow: Workflow): string => {
+    if (workflow.progress === 100 && workflow.completedAt) {
+      const date = new Date(workflow.completedAt);
+      return `Completed on ${date.toLocaleDateString("en-ZA", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`;
+    }
+    return workflow.dueDate;
+  };
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return items.filter((w) => {
@@ -249,9 +269,12 @@ function WorkflowsContent() {
         matchAssignee = w.assignee.name === assigneeFilter;
       }
 
+      // For filtering, treat completed workflows as "Completed" status
+      const displayStatus = w.progress === 100 ? "Completed" : w.status;
+
       return (
         matchSearch &&
-        (statusFilter === "All" || w.status === statusFilter) &&
+        (statusFilter === "All" || displayStatus === statusFilter) &&
         (teamFilter === "All" || w.team === teamFilter) &&
         (priorityFilter === "All" || w.priority === priorityFilter) &&
         matchAssignee
@@ -260,9 +283,11 @@ function WorkflowsContent() {
   }, [items, search, statusFilter, teamFilter, priorityFilter, assigneeFilter]);
 
   const total = items.length;
-  const inProgress = items.filter((w) => w.status === "In Progress").length;
+  const inProgress = items.filter(
+    (w) => w.status === "In Progress" && w.progress < 100,
+  ).length;
   const blocked = items.filter((w) => w.status === "Blocked").length;
-  const completed = items.filter((w) => w.status === "Completed").length;
+  const completed = items.filter((w) => w.progress === 100).length;
   const activeFilters = [
     statusFilter !== "All",
     teamFilter !== "All",
@@ -555,174 +580,191 @@ function WorkflowsContent() {
       {/* Grid view */}
       {view === "grid" && filtered.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-          {filtered.map((w) => (
-            <Card
-              key={w.id}
-              onClick={() => router.push(`/workflows/${w.id}`)}
-              className={`p-4 hover:shadow-lg transition-all border-l-4 cursor-pointer ${PRIORITY_CFG[w.priority].border}`}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm leading-snug">
-                      {w.title}
-                    </h3>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(w.id, w.title);
-                      }}
-                      className="text-red-400 hover:text-red-600 transition-colors"
-                      title="Delete workflow"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
-                    {w.description}
-                  </p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs text-gray-400">{w.team}</p>
-                    <div className="flex items-center gap-1">
-                      {editingDateId === w.id ? (
-                        <>
-                          <Input
-                            type="date"
-                            value={tempDate}
-                            onChange={(e) => setTempDate(e.target.value)}
-                            className="w-28 h-6 text-xs"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateDueDate(w.id, tempDate);
-                            }}
-                            className="text-green-500 text-xs hover:underline"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingDateId(null);
-                            }}
-                            className="text-gray-500 text-xs hover:underline"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span
-                            className={`text-xs cursor-pointer hover:text-blue-500 ${
-                              w.dueDate === "Overdue"
-                                ? "text-red-500 font-semibold"
-                                : "text-gray-500"
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              let dateValue = "";
-                              if (
-                                w.dueDate &&
-                                w.dueDate !== "Overdue" &&
-                                w.dueDate !== "No due date"
-                              ) {
-                                const parts =
-                                  w.dueDate.match(/(\d+)\/(\d+)\/(\d+)/);
-                                if (parts) {
-                                  dateValue = `${parts[3]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+          {filtered.map((w) => {
+            const displayStatus = getDisplayStatus(w);
+            const displayDueDate = getDisplayDueDate(w);
+            const isCompleted = w.progress === 100;
+
+            return (
+              <Card
+                key={w.id}
+                onClick={() => router.push(`/workflows/${w.id}`)}
+                className={`p-4 hover:shadow-lg transition-all border-l-4 cursor-pointer ${PRIORITY_CFG[w.priority].border}`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm leading-snug">
+                        {w.title}
+                      </h3>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(w.id, w.title);
+                        }}
+                        className="text-red-400 hover:text-red-600 transition-colors"
+                        title="Delete workflow"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      {w.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-gray-400">{w.team}</p>
+                      <div className="flex items-center gap-1">
+                        {editingDateId === w.id ? (
+                          <>
+                            <Input
+                              type="date"
+                              value={tempDate}
+                              onChange={(e) => setTempDate(e.target.value)}
+                              className="w-28 h-6 text-xs"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateDueDate(w.id, tempDate);
+                              }}
+                              className="text-green-500 text-xs hover:underline"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingDateId(null);
+                              }}
+                              className="text-gray-500 text-xs hover:underline"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span
+                              className={`text-xs cursor-pointer hover:text-blue-500 ${
+                                isCompleted
+                                  ? "text-green-600 font-semibold"
+                                  : w.dueDate === "Overdue"
+                                    ? "text-red-500 font-semibold"
+                                    : "text-gray-500"
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isCompleted) return;
+                                let dateValue = "";
+                                if (
+                                  w.dueDate &&
+                                  w.dueDate !== "Overdue" &&
+                                  w.dueDate !== "No due date"
+                                ) {
+                                  const parts =
+                                    w.dueDate.match(/(\d+)\/(\d+)\/(\d+)/);
+                                  if (parts) {
+                                    dateValue = `${parts[3]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+                                  }
                                 }
-                              }
-                              setTempDate(dateValue);
-                              setEditingDateId(w.id);
-                            }}
-                          >
-                            {w.dueDate}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              let dateValue = "";
-                              if (
-                                w.dueDate &&
-                                w.dueDate !== "Overdue" &&
-                                w.dueDate !== "No due date"
-                              ) {
-                                const parts =
-                                  w.dueDate.match(/(\d+)\/(\d+)\/(\d+)/);
-                                if (parts) {
-                                  dateValue = `${parts[3]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
-                                }
-                              }
-                              setTempDate(dateValue);
-                              setEditingDateId(w.id);
-                            }}
-                            className="text-gray-400 hover:text-blue-500 transition-colors"
-                            title="Edit due date"
-                          >
-                            <Calendar className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
+                                setTempDate(dateValue);
+                                setEditingDateId(w.id);
+                              }}
+                            >
+                              {displayDueDate}
+                            </span>
+                            {!isCompleted && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  let dateValue = "";
+                                  if (
+                                    w.dueDate &&
+                                    w.dueDate !== "Overdue" &&
+                                    w.dueDate !== "No due date"
+                                  ) {
+                                    const parts =
+                                      w.dueDate.match(/(\d+)\/(\d+)\/(\d+)/);
+                                    if (parts) {
+                                      dateValue = `${parts[3]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+                                    }
+                                  }
+                                  setTempDate(dateValue);
+                                  setEditingDateId(w.id);
+                                }}
+                                className="text-gray-400 hover:text-blue-500 transition-colors"
+                                title="Edit due date"
+                              >
+                                <Calendar className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_CFG[w.status].bg} ${STATUS_CFG[w.status].text}`}
-                >
-                  {w.status}
-                </span>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_CFG[w.priority].bg} ${PRIORITY_CFG[w.priority].text}`}
-                >
-                  {w.priority.charAt(0) + w.priority.slice(1).toLowerCase()}{" "}
-                  Priority
-                </span>
-              </div>
-              <div className="mb-3">
-                <div className="flex justify-between text-xs text-gray-400 mb-1">
-                  <span>Progress</span>
-                  <span className="font-medium text-gray-700">
-                    {w.progress}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full ${progressColor(w.progress)}`}
-                    style={{ width: `${w.progress}%` }}
-                  />
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1 mb-3">
-                {w.tags.slice(0, 3).map((tag) => (
+                <div className="flex flex-wrap gap-1.5 mb-3">
                   <span
-                    key={tag}
-                    className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded"
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      isCompleted
+                        ? "bg-green-100 text-green-700"
+                        : STATUS_CFG[w.status].bg
+                    } ${isCompleted ? "text-green-700" : STATUS_CFG[w.status].text}`}
                   >
-                    {tag}
+                    {displayStatus}
                   </span>
-                ))}
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 rounded-full bg-gradient-to-r ${w.assignee.color} flex items-center justify-center text-white text-xs font-bold`}
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_CFG[w.priority].bg} ${PRIORITY_CFG[w.priority].text}`}
                   >
-                    {w.assignee.initials}
-                  </div>
-                  <span className="text-xs text-gray-600">
-                    {w.assignee.name}
+                    {w.priority.charAt(0) + w.priority.slice(1).toLowerCase()}{" "}
+                    Priority
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">
-                  {w.progress === 100 ? "✓ Done" : `${w.tasksLeft} tasks left`}
-                </span>
-              </div>
-            </Card>
-          ))}
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Progress</span>
+                    <span className="font-medium text-gray-700">
+                      {w.progress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full ${progressColor(w.progress)}`}
+                      style={{ width: `${w.progress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {w.tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-6 h-6 rounded-full bg-gradient-to-r ${w.assignee.color} flex items-center justify-center text-white text-xs font-bold`}
+                    >
+                      {w.assignee.initials}
+                    </div>
+                    <span className="text-xs text-gray-600">
+                      {w.assignee.name}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {w.progress === 100
+                      ? "✓ Done"
+                      : `${w.tasksLeft} tasks left`}
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -752,78 +794,95 @@ function WorkflowsContent() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.map((w) => (
-                <tr
-                  key={w.id}
-                  onClick={() => router.push(`/workflows/${w.id}`)}
-                  className="hover:bg-gray-50 transition-colors group cursor-pointer"
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-sm">{w.title}</div>
-                    <div className="text-xs text-gray-400 mt-0.5 max-w-[180px] truncate">
-                      {w.description}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
-                    {w.team}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${STATUS_CFG[w.status].bg} ${STATUS_CFG[w.status].text}`}
-                    >
-                      {w.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_CFG[w.priority].bg} ${PRIORITY_CFG[w.priority].text}`}
-                    >
-                      {w.priority.charAt(0) + w.priority.slice(1).toLowerCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                        <div
-                          className={`h-1.5 rounded-full ${progressColor(w.progress)}`}
-                          style={{ width: `${w.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {w.progress}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-6 h-6 rounded-full bg-gradient-to-r ${w.assignee.color} flex items-center justify-center text-white text-xs font-bold`}
-                      >
-                        {w.assignee.initials}
-                      </div>
-                      <span className="text-xs text-gray-600 whitespace-nowrap">
-                        {w.assignee.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td
-                    className={`px-4 py-3 text-xs whitespace-nowrap ${w.dueDate === "Overdue" ? "text-red-500 font-semibold" : "text-gray-500"}`}
+              {filtered.map((w) => {
+                const displayStatus = getDisplayStatus(w);
+                const displayDueDate = getDisplayDueDate(w);
+                const isCompleted = w.progress === 100;
+
+                return (
+                  <tr
+                    key={w.id}
+                    onClick={() => router.push(`/workflows/${w.id}`)}
+                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
                   >
-                    {w.dueDate}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(w.id, w.title);
-                      }}
-                      className="text-red-400 hover:text-red-600 transition-colors"
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-sm">{w.title}</div>
+                      <div className="text-xs text-gray-400 mt-0.5 max-w-[180px] truncate">
+                        {w.description}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                      {w.team}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${
+                          isCompleted
+                            ? "bg-green-100 text-green-700"
+                            : STATUS_CFG[w.status].bg
+                        } ${isCompleted ? "text-green-700" : STATUS_CFG[w.status].text}`}
+                      >
+                        {displayStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_CFG[w.priority].bg} ${PRIORITY_CFG[w.priority].text}`}
+                      >
+                        {w.priority.charAt(0) +
+                          w.priority.slice(1).toLowerCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full ${progressColor(w.progress)}`}
+                            style={{ width: `${w.progress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {w.progress}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-6 h-6 rounded-full bg-gradient-to-r ${w.assignee.color} flex items-center justify-center text-white text-xs font-bold`}
+                        >
+                          {w.assignee.initials}
+                        </div>
+                        <span className="text-xs text-gray-600 whitespace-nowrap">
+                          {w.assignee.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-xs whitespace-nowrap ${
+                        isCompleted
+                          ? "text-green-600 font-semibold"
+                          : w.dueDate === "Overdue"
+                            ? "text-red-500 font-semibold"
+                            : "text-gray-500"
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      {displayDueDate}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(w.id, w.title);
+                        }}
+                        className="text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -63,14 +63,32 @@ model Workflow {
   tags        String
   dueDate     DateTime?
   progress    Int        @default(0)
+  completedAt DateTime?
   tasks       Task[]     @relation("WorkflowTasks")
   activities  Activity[] @relation("WorkflowActivities")
   comments    Comment[]
+  files       File[]     // <-- ADDED: File attachments
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   
   // Stage History for accurate analytics
   stageHistory WorkflowStageHistory[]
+}
+
+// ─── NEW: File model for attachments ────────────────────────────────────────
+model File {
+  id           String   @id @default(cuid())
+  filename     String   // Storage filename (path in blob)
+  originalName String   // Original user filename
+  url          String   // Public URL
+  size         Int      // File size in bytes
+  mimeType     String   // e.g. image/png, application/pdf
+  workflowId   String
+  workflow     Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  uploadedBy   String?  // User ID who uploaded it (optional for now)
+  createdAt    DateTime @default(now())
+  
+  @@index([workflowId])
 }
 
 model Task {

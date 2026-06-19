@@ -47,7 +47,8 @@ export async function GET(request: Request) {
             initials: "?",
             color: "from-gray-400 to-gray-500",
           },
-      dueDate: formatDueDate(w.dueDate),
+      dueDate: formatDueDate(w.dueDate, w.progress, w.completedAt),
+      completedAt: w.completedAt,
     }));
 
     return NextResponse.json(shaped);
@@ -134,7 +135,11 @@ export async function POST(request: Request) {
               initials: "?",
               color: "from-gray-400 to-gray-500",
             },
-        dueDate: formatDueDate(workflow.dueDate),
+        dueDate: formatDueDate(
+          workflow.dueDate,
+          workflow.progress,
+          workflow.completedAt,
+        ),
       },
       { status: 201 },
     );
@@ -169,7 +174,21 @@ function statusToStage(status: string): Stage {
   return map[status] ?? Stage.TODO;
 }
 
-function formatDueDate(date: Date | null): string {
+function formatDueDate(
+  date: Date | null,
+  progress: number,
+  completedAt: string | null,
+): string {
+  // If workflow is at 100%, show completion date
+  if (progress === 100 && completedAt) {
+    const dateObj = new Date(completedAt);
+    return `Completed on ${dateObj.toLocaleDateString("en-ZA", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })}`;
+  }
+
   if (!date) return "No due date";
   const now = new Date();
   const diff = Math.ceil(

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-// Define the type for the activity with relations
 type ActivityWithRelations = {
   id: string;
   action: string;
@@ -26,7 +25,6 @@ export async function GET(request: Request) {
       },
     });
 
-    // Add explicit type for the map parameter
     const formatted = activities.map((a: ActivityWithRelations) => ({
       id: a.id,
       user: a.user?.name ?? "System",

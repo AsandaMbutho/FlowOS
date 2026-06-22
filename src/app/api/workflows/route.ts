@@ -48,7 +48,7 @@ export async function GET(request: Request) {
             color: "from-gray-400 to-gray-500",
           },
       dueDate: formatDueDate(w.dueDate, w.progress, w.completedAt),
-      completedAt: w.completedAt,
+      completedAt: w.completedAt ? w.completedAt.toISOString() : null,
     }));
 
     return NextResponse.json(shaped);
@@ -177,7 +177,7 @@ function statusToStage(status: string): Stage {
 function formatDueDate(
   date: Date | null,
   progress: number,
-  completedAt: string | null,
+  completedAt: Date | null,
 ): string {
   // If workflow is at 100%, show completion date
   if (progress === 100 && completedAt) {

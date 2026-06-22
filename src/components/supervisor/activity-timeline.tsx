@@ -2,7 +2,16 @@
 
 import { format } from "date-fns";
 
-export function ActivityTimeline({ activities }: { activities: any[] }) {
+interface Activity {
+  id: string;
+  action: string;
+  details: string;
+  createdAt: string;
+  user?: { name: string };
+  workflow?: { title: string };
+}
+
+export function ActivityTimeline({ activities }: { activities: Activity[] }) {
   const groupedActivities = activities.reduce(
     (acc, activity) => {
       const date = format(new Date(activity.createdAt), "yyyy-MM-dd");
@@ -10,7 +19,7 @@ export function ActivityTimeline({ activities }: { activities: any[] }) {
       acc[date].push(activity);
       return acc;
     },
-    {} as Record<string, any[]>,
+    {} as Record<string, Activity[]>,
   );
 
   const sortedDates = Object.keys(groupedActivities).sort().reverse();
@@ -28,7 +37,7 @@ export function ActivityTimeline({ activities }: { activities: any[] }) {
             {format(new Date(date), "EEEE, MMMM d, yyyy")}
           </h3>
           <div className="space-y-2">
-            {groupedActivities[date].map((activity) => (
+            {groupedActivities[date].map((activity: Activity) => (
               <div
                 key={activity.id}
                 className="flex items-start gap-3 p-2 hover:bg-muted/30 rounded-lg transition-colors"

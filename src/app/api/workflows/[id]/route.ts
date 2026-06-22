@@ -11,6 +11,16 @@ const STAGE_LABELS: Record<Stage, string> = {
   BLOCKED: "Blocked",
 };
 
+function assigneeColor(name: string): string {
+  const colors: Record<string, string> = {
+    Asanda: "from-purple-500 to-pink-500",
+    Sizwe: "from-green-500 to-teal-500",
+    Themba: "from-blue-500 to-cyan-500",
+    Shravan: "from-orange-500 to-red-500",
+  };
+  return colors[name] ?? "from-gray-400 to-gray-500";
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },

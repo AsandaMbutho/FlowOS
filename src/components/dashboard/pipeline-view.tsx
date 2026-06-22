@@ -12,6 +12,8 @@ interface Workflow {
   priority: string;
 }
 
+const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan"]; // <-- Lisa and Mike removed
+
 export function PipelineView() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);

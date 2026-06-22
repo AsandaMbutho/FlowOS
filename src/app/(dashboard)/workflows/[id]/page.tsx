@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -236,6 +237,8 @@ function renderBody(body: string) {
 
 export default function WorkflowDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { data: session } = useSession();
+  const currentUser = session?.user?.name || "Unknown";
 
   const [raw, setRaw] = useState<RawWorkflow | null>(null);
   const [status, setStatus] = useState<Status>("To Do");
@@ -553,7 +556,7 @@ export default function WorkflowDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           body: commentBody,
-          authorName: "Asanda",
+          authorName: currentUser, // <-- FIXED: uses logged-in user
           mentionedNames,
         }),
       });
@@ -588,7 +591,7 @@ export default function WorkflowDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           body: dailyText,
-          authorName: "Asanda",
+          authorName: currentUser, // <-- FIXED: uses logged-in user
           mentionedNames,
         }),
       });

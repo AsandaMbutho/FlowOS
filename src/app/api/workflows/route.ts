@@ -215,8 +215,6 @@ function assigneeColor(name: string): string {
     Sizwe: "from-green-500 to-teal-500",
     Themba: "from-blue-500 to-cyan-500",
     Shravan: "from-orange-500 to-red-500",
-    Lisa: "from-yellow-500 to-orange-500",
-    Mike: "from-red-500 to-pink-500",
   };
   return colors[name] ?? "from-gray-400 to-gray-500";
 }

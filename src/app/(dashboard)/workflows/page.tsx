@@ -83,7 +83,7 @@ const progressColor = (p: number) =>
         ? "bg-yellow-500"
         : "bg-red-400";
 
-const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan", "Lisa", "Mike"];
+const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan"];
 const TEAMS: string[] = ["Engineering", "Design", "Sales", "Operations"];
 const STATUSES: Status[] = [
   "In Progress",

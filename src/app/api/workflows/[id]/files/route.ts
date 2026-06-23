@@ -52,9 +52,9 @@ export async function POST(
     const filename = `${timestamp}-${file.name}`;
     const path = `workflows/${id}/${filename}`;
 
-    // Upload to Vercel Blob
+    // Upload to Vercel Blob - CHANGED TO PUBLIC
     const blob = await put(path, file, {
-      access: "private",
+      access: "public", // <-- FIXED: changed from "private" to "public"
       addRandomSuffix: true,
     });
 

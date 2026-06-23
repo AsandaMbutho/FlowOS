@@ -10,6 +10,7 @@ async function main() {
       SELECT id, title, "dueDate", "createdAt" 
       FROM "Workflow" 
       WHERE progress = 100 
+      AND stage = 'DONE' 
       AND "completedAt" IS NULL
     `) as any[];
 
@@ -29,9 +30,7 @@ async function main() {
         WHERE id = ${workflow.id}
       `;
 
-      console.log(
-        `✅ Updated: "${workflow.title}" -> Completed on ${completedAt}`,
-      );
+      console.log(`✅ Updated: "${workflow.title}" -> ${completedAt}`);
     }
 
     console.log("🎉 All done!");

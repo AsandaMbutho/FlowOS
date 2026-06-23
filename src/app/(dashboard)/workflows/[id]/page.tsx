@@ -87,6 +87,7 @@ interface RawWorkflow {
   dueDate: string | null;
   progress: number;
   completedAt: string | null;
+  createdAt: string;
   assignee: { id: string; name: string; email: string } | null;
   tasks: Task[];
   files: FileData[];
@@ -556,7 +557,7 @@ export default function WorkflowDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           body: commentBody,
-          authorName: currentUser, // <-- FIXED: uses logged-in user
+          authorName: currentUser,
           mentionedNames,
         }),
       });
@@ -591,7 +592,7 @@ export default function WorkflowDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           body: dailyText,
-          authorName: currentUser, // <-- FIXED: uses logged-in user
+          authorName: currentUser,
           mentionedNames,
         }),
       });
@@ -739,6 +740,20 @@ export default function WorkflowDetailPage() {
               </div>
               <span>{assigneeName}</span>
             </div>
+            {/* ─── CREATED AT ─── */}
+            {raw.createdAt && (
+              <div className="flex items-center gap-1.5 text-gray-400">
+                <span>📅</span>
+                <span className="text-xs">
+                  Created{" "}
+                  {new Date(raw.createdAt).toLocaleDateString("en-ZA", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
               <span

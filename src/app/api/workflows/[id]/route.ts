@@ -104,14 +104,14 @@ export async function PATCH(
       }
     }
 
+    // 🔥 FIXED: Always set completedAt when progress is 100
     let completedAt = undefined;
     if (progress !== undefined) {
-      const isNowCompleted = progress === 100;
-      const wasPreviouslyCompleted = previous?.stage === "DONE";
-
-      if (isNowCompleted && !wasPreviouslyCompleted) {
+      if (progress === 100) {
+        // Always set completedAt when progress is 100
         completedAt = new Date();
-      } else if (!isNowCompleted) {
+      } else {
+        // Clear completedAt when progress is below 100
         completedAt = null;
       }
     }

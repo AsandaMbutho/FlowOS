@@ -1,7 +1,16 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
+import {
+  Code2,
+  ShieldCheck,
+  LineChart,
+  Smartphone,
+  Rocket,
+  Briefcase,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +20,7 @@ const servicesData: Record<
   {
     title: string;
     description: string;
-    icon: string;
+    icon: LucideIcon;
     details: string[];
     color: string;
   }
@@ -20,7 +29,7 @@ const servicesData: Record<
     title: "Web Development",
     description:
       "Custom websites and web applications built with modern technologies.",
-    icon: "🌐",
+    icon: Code2,
     color: "from-blue-500 to-cyan-500",
     details: [
       "Custom website design and development",
@@ -35,7 +44,7 @@ const servicesData: Record<
     title: "Data Security & Compliance",
     description:
       "Enterprise-grade security solutions ensuring your data and systems.",
-    icon: "🛡️",
+    icon: ShieldCheck,
     color: "from-purple-500 to-indigo-500",
     details: [
       "Security audits and assessments",
@@ -50,7 +59,7 @@ const servicesData: Record<
     title: "Analytics & Insights",
     description:
       "Data-driven solutions to understand your customers and optimize your business.",
-    icon: "📊",
+    icon: LineChart,
     color: "from-amber-500 to-orange-500",
     details: [
       "Data analytics and visualization",
@@ -65,7 +74,7 @@ const servicesData: Record<
     title: "Mobile Solutions",
     description:
       "Native and cross-platform mobile applications for any device.",
-    icon: "📱",
+    icon: Smartphone,
     color: "from-teal-500 to-emerald-500",
     details: [
       "Native iOS and Android apps",
@@ -80,7 +89,7 @@ const servicesData: Record<
     title: "Digital Strategy",
     description:
       "Comprehensive digital transformation strategies tailored to your market.",
-    icon: "💡",
+    icon: Rocket,
     color: "from-yellow-500 to-amber-500",
     details: [
       "Digital transformation roadmaps",
@@ -95,7 +104,7 @@ const servicesData: Record<
     title: "Consulting Services",
     description:
       "Expert guidance on technology decisions, architecture, and transformation initiatives.",
-    icon: "💼",
+    icon: Briefcase,
     color: "from-slate-500 to-gray-600",
     details: [
       "Technology advisory",
@@ -117,9 +126,11 @@ export default function ServicePage() {
     return (
       <div className="p-6">
         <div className="text-center py-16">
-          <h1 className="text-2xl font-bold">Service not found</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Service not found
+          </h1>
           <p className="text-muted-foreground mt-2">
-            The service you're looking for doesn't exist.
+            The service you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link href="/services">
             <Button className="mt-4 bg-[#0f1f3d] hover:bg-[#10b981]">
@@ -131,11 +142,13 @@ export default function ServicePage() {
     );
   }
 
+  const Icon = service.icon;
+
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Back button */}
       <Link href="/services">
-        <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition">
+        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="w-4 h-4" /> Back to Services
         </button>
       </Link>
@@ -144,30 +157,36 @@ export default function ServicePage() {
       <div
         className={`bg-gradient-to-br ${service.color} rounded-2xl p-8 text-white`}
       >
-        <div className="text-4xl mb-3">{service.icon}</div>
+        <div className="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center mb-4">
+          <Icon className="w-7 h-7 text-white" strokeWidth={2} />
+        </div>
         <h1 className="text-3xl font-bold">{service.title}</h1>
         <p className="text-white/80 mt-2 max-w-2xl">{service.description}</p>
       </div>
 
       {/* Details */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">What We Offer</h2>
+      <Card className="p-6 bg-card border border-border">
+        <h2 className="text-lg font-semibold mb-4 text-foreground">
+          What We Offer
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {service.details.map((item, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
+              className="flex items-center gap-2 p-3 bg-muted/40 rounded-lg"
             >
-              <span className="text-[#10b981] text-lg">✓</span>
-              <span className="text-sm text-gray-700">{item}</span>
+              <Check className="w-4 h-4 text-[#10b981] flex-shrink-0" />
+              <span className="text-sm text-foreground/80">{item}</span>
             </div>
           ))}
         </div>
       </Card>
 
       {/* Contact CTA */}
-      <div className="text-center p-6 bg-gray-50 rounded-xl border border-gray-200">
-        <p className="text-gray-600 mb-4">Interested in our {service.title}?</p>
+      <div className="text-center p-6 bg-muted/20 rounded-xl border border-border">
+        <p className="text-muted-foreground mb-4">
+          Interested in our {service.title}?
+        </p>
         <Button className="bg-[#0f1f3d] hover:bg-[#10b981]">
           Discuss Project
         </Button>

@@ -47,6 +47,7 @@ model User {
   activities    Activity[]       @relation("UserActivities")
   comments      Comment[]        @relation("CommentAuthor")
   mentionedIn   CommentMention[]
+  documents     Document[]       // ← ADDED: Documents uploaded by user
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -67,7 +68,8 @@ model Workflow {
   tasks       Task[]     @relation("WorkflowTasks")
   activities  Activity[] @relation("WorkflowActivities")
   comments    Comment[]
-  files       File[]     // <-- ADDED: File attachments
+  files       File[]     // File attachments
+  documents   Document[] // ← ADDED: Documents linked to workflow
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   
@@ -75,7 +77,7 @@ model Workflow {
   stageHistory WorkflowStageHistory[]
 }
 
-// ─── NEW: File model for attachments ────────────────────────────────────────
+// File model for attachments
 model File {
   id           String   @id @default(cuid())
   filename     String   // Storage filename (path in blob)
@@ -163,4 +165,20 @@ model WorkflowStageHistory {
   @@index([workflowId])
   @@index([stage])
   @@index([enteredAt])
+}
+
+// Document model - for project-based document storage
+model Document {
+  id          String    @id @default(cuid())
+  name        String
+  fileUrl     String
+  fileType    String    @default("Other")
+  fileSize    String    @default("0 KB")
+  project     String    // "flowos", "cybersafe", "elearning", "crm"
+  workflowId  String?
+  workflow    Workflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  uploadedBy  String?
+  user        User?     @relation(fields: [uploadedBy], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

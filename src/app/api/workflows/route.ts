@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Priority, Stage } from "@prisma/client";
 
-// GET /api/workflows — fetch all workflows with assignee
+// GET /api/workflows — fetch all workflows with assignee and files
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,6 +21,19 @@ export async function GET(request: Request) {
       include: {
         assignee: { select: { id: true, name: true, email: true, role: true } },
         tasks: { select: { id: true, completed: true } },
+        files: {
+          // 👈 ADD THIS: include files
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            url: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -49,6 +62,16 @@ export async function GET(request: Request) {
           },
       dueDate: formatDueDate(w.dueDate, w.progress, w.completedAt),
       completedAt: w.completedAt ? w.completedAt.toISOString() : null,
+      files: w.files.map((f) => ({
+        // 👈 ADD THIS: shape the files data
+        id: f.id,
+        filename: f.filename,
+        originalName: f.originalName,
+        url: f.url,
+        size: f.size,
+        mimeType: f.mimeType,
+        createdAt: f.createdAt.toISOString(),
+      })),
     }));
 
     return NextResponse.json(shaped);
@@ -98,6 +121,18 @@ export async function POST(request: Request) {
       include: {
         assignee: { select: { id: true, name: true } },
         tasks: true,
+        files: {
+          // 👈 ADD THIS: include files in response
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            url: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -140,6 +175,15 @@ export async function POST(request: Request) {
           workflow.progress,
           workflow.completedAt,
         ),
+        files: workflow.files.map((f) => ({
+          id: f.id,
+          filename: f.filename,
+          originalName: f.originalName,
+          url: f.url,
+          size: f.size,
+          mimeType: f.mimeType,
+          createdAt: f.createdAt.toISOString(),
+        })),
       },
       { status: 201 },
     );

@@ -35,6 +35,11 @@ export function StatsCards() {
         const completed = workflows.filter(
           (w) => w.status === "Completed",
         ).length;
+        // NOTE: this compares dueDate to the literal string "Overdue",
+        // which will not match a real date value. Likely related to the
+        // null-dueDate/computed-label issue from the calendar fix — worth
+        // revisiting the actual overdue condition (e.g. dueDate in the past
+        // AND status !== "Completed") separately from this color fix.
         const overdue = workflows.filter((w) => w.dueDate === "Overdue").length;
         const avgProgress =
           total > 0
@@ -53,32 +58,32 @@ export function StatsCards() {
       title: "Total Workflows",
       value: stats.total,
       icon: Briefcase,
-      bg: "bg-teal-50",
-      iconColor: "text-teal-600",
+      bg: "bg-teal-500/10",
+      iconColor: "text-teal-400",
       suffix: "",
     },
     {
       title: "Avg Progress",
       value: stats.avgProgress,
       icon: TrendingUp,
-      bg: "bg-blue-50",
-      iconColor: "text-blue-600",
+      bg: "bg-blue-500/10",
+      iconColor: "text-blue-400",
       suffix: "%",
     },
     {
       title: "Overdue",
       value: stats.overdue,
       icon: AlertTriangle,
-      bg: "bg-red-50",
-      iconColor: "text-red-500",
+      bg: "bg-red-500/10",
+      iconColor: "text-red-400",
       suffix: "",
     },
     {
       title: "Completed",
       value: stats.completed,
       icon: CheckCircle,
-      bg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
+      bg: "bg-emerald-500/10",
+      iconColor: "text-emerald-400",
       suffix: "",
     },
   ];

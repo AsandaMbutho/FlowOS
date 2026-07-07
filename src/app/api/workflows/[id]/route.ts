@@ -11,14 +11,12 @@ const STAGE_LABELS: Record<Stage, string> = {
   BLOCKED: "Blocked",
 };
 
-function assigneeColor(name: string): string {
-  const colors: Record<string, string> = {
-    Asanda: "from-purple-500 to-pink-500",
-    Sizwe: "from-green-500 to-teal-500",
-    Themba: "from-blue-500 to-cyan-500",
-    Shravan: "from-orange-500 to-red-500",
-  };
-  return colors[name] ?? "from-gray-400 to-gray-500";
+function safeParseJson(val: string | null): string[] {
+  try {
+    return JSON.parse(val ?? "[]");
+  } catch {
+    return [];
+  }
 }
 
 export async function GET(
@@ -31,8 +29,26 @@ export async function GET(
       where: { id },
       include: {
         assignee: { select: { id: true, name: true, email: true } },
-        tasks: true,
-        files: true,
+        tasks: {
+          select: {
+            id: true,
+            title: true,
+            completed: true,
+            assignee: { select: { id: true, name: true } },
+          },
+        },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            url: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
         activities: {
           include: { user: { select: { name: true } } },
           orderBy: { createdAt: "desc" },
@@ -40,13 +56,65 @@ export async function GET(
         },
       },
     });
+
     if (!workflow) {
       return NextResponse.json(
         { error: "Workflow not found" },
         { status: 404 },
       );
     }
-    return NextResponse.json(workflow);
+
+    const shaped = {
+      id: workflow.id,
+      title: workflow.title,
+      description: workflow.description ?? "",
+      team: workflow.team ?? "",
+      stage: workflow.stage,
+      priority: workflow.priority,
+      progress: workflow.progress,
+      tags: safeParseJson(workflow.tags),
+      dueDate: workflow.dueDate,
+      completedAt: workflow.completedAt
+        ? workflow.completedAt.toISOString()
+        : null,
+      createdAt: workflow.createdAt.toISOString(),
+      assignee: workflow.assignee
+        ? {
+            id: workflow.assignee.id,
+            name: workflow.assignee.name ?? "",
+            email: workflow.assignee.email ?? "",
+          }
+        : null,
+      tasks: workflow.tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        completed: t.completed,
+        assignee: t.assignee
+          ? {
+              id: t.assignee.id,
+              name: t.assignee.name ?? "",
+            }
+          : null,
+      })),
+      files: workflow.files.map((f) => ({
+        id: f.id,
+        filename: f.filename,
+        originalName: f.originalName,
+        url: f.url,
+        size: f.size,
+        mimeType: f.mimeType,
+        createdAt: f.createdAt.toISOString(),
+      })),
+      activities: workflow.activities.map((a) => ({
+        id: a.id,
+        action: a.action,
+        details: a.details,
+        createdAt: a.createdAt.toISOString(),
+        user: a.user ? { name: a.user.name } : undefined,
+      })),
+    };
+
+    return NextResponse.json(shaped);
   } catch (error) {
     console.error("GET /api/workflows/[id] error:", error);
     return NextResponse.json(
@@ -104,14 +172,11 @@ export async function PATCH(
       }
     }
 
-    // 🔥 FIXED: Always set completedAt when progress is 100
     let completedAt = undefined;
     if (progress !== undefined) {
       if (progress === 100) {
-        // Always set completedAt when progress is 100
         completedAt = new Date();
       } else {
-        // Clear completedAt when progress is below 100
         completedAt = null;
       }
     }
@@ -131,8 +196,26 @@ export async function PATCH(
       },
       include: {
         assignee: { select: { id: true, name: true } },
-        tasks: { select: { id: true, completed: true } },
-        files: true,
+        tasks: {
+          select: {
+            id: true,
+            title: true,
+            completed: true,
+            assignee: { select: { id: true, name: true } },
+          },
+        },
+        files: {
+          select: {
+            id: true,
+            filename: true,
+            originalName: true,
+            url: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -165,7 +248,48 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updated);
+    const shaped = {
+      id: updated.id,
+      title: updated.title,
+      description: updated.description ?? "",
+      team: updated.team ?? "",
+      stage: updated.stage,
+      priority: updated.priority,
+      progress: updated.progress,
+      tags: safeParseJson(updated.tags),
+      dueDate: updated.dueDate,
+      completedAt: updated.completedAt
+        ? updated.completedAt.toISOString()
+        : null,
+      assignee: updated.assignee
+        ? {
+            id: updated.assignee.id,
+            name: updated.assignee.name ?? "",
+          }
+        : null,
+      tasks: updated.tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        completed: t.completed,
+        assignee: t.assignee
+          ? {
+              id: t.assignee.id,
+              name: t.assignee.name ?? "",
+            }
+          : null,
+      })),
+      files: updated.files.map((f) => ({
+        id: f.id,
+        filename: f.filename,
+        originalName: f.originalName,
+        url: f.url,
+        size: f.size,
+        mimeType: f.mimeType,
+        createdAt: f.createdAt.toISOString(),
+      })),
+    };
+
+    return NextResponse.json(shaped);
   } catch (error) {
     console.error("PATCH /api/workflows/[id] error:", error);
     return NextResponse.json(

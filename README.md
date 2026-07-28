@@ -147,6 +147,4 @@ Role-Based Workflow Automation
 
 👨‍💻 About the Developer
 
-Asanda Mbutho
-
 Software Engineer focused on building software that solves business problems through workflow automation, intelligent systems, and scalable web technologies.

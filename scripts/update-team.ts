@@ -9,15 +9,8 @@ const TEAM_ROSTER = [
   { name: "Themba", email: "netshifirathemba0@gmail.com" },
   { name: "Matlhodi", email: "moilamatlhodi707@gmail.com" },
   { name: "Lutendo", email: "lupreshie@gmail.com" },
-  { name: "Ridwaan", email: "sridwaan0@gmail.com" }
+  { name: "Ridwaan", email: "sridwaan0@gmail.com" },
 ];
-
-const everyone = {
-  name: "Everyone",
-  email: TEAM_ROSTER.map(member => member.email)
-};
-
-TEAM_ROSTER.push(everyone);
 
 async function main() {
   console.log("Updating FlowOS team roster...");
@@ -31,6 +24,9 @@ async function main() {
   };
 
   await deleteUserAndUnassign("Shravan", summary);
+  // Safety net: cleans up a stray "Everyone" user row if one was ever
+  // created by mistake. "Everyone" is not a real account — broadcasting
+  // to everyone happens by looping over real users when assigneeId is null.
   await deleteUserAndUnassign("Everyone", summary);
 
   const placeholderPassword = await bcrypt.hash("password123", 10);

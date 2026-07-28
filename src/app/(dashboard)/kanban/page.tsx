@@ -136,14 +136,14 @@ function KanbanCard({
       draggable
       onDragStart={(e) => onDragStart(e, workflow.id)}
       onClick={() => onClick(workflow.id)}
-      className={`bg-white rounded-xl border-l-4 border border-gray-100 ${p.border} p-4 cursor-pointer hover:shadow-md active:opacity-60 transition-all select-none group`}
+      className={`bg-card rounded-xl border-l-4 border ${p.border} p-4 cursor-pointer hover:shadow-md active:opacity-60 transition-all select-none group`}
     >
       {/* Drag handle hint */}
       <div className="flex items-start gap-2">
         <GripVertical className="w-4 h-4 text-gray-300 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">
+          <h3 className="text-sm font-semibold text-foreground leading-snug mb-1">
             {workflow.title}
           </h3>
           <p className="text-xs text-gray-400 truncate mb-2">
@@ -173,7 +173,7 @@ function KanbanCard({
                 {workflow.progress}%
               </span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-1">
+            <div className="w-full bg-muted rounded-full h-1">
               <div
                 className={`h-1 rounded-full ${progressColor(workflow.progress)}`}
                 style={{ width: `${workflow.progress}%` }}
@@ -406,8 +406,8 @@ export default function KanbanPage() {
           {
             label: "Total",
             val: total,
-            color: "text-gray-700",
-            bg: "bg-gray-100",
+            color: "text-muted-foreground",
+            bg: "bg-muted",
           },
           {
             label: "In Progress",
@@ -430,7 +430,7 @@ export default function KanbanPage() {
         ].map(({ label, val, color, bg }) => (
           <div
             key={label}
-            className="bg-white border rounded-xl px-4 py-3 flex items-center gap-3"
+            className="bg-card border rounded-xl px-4 py-3 flex items-center gap-3"
           >
             <div
               className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center shrink-0`}

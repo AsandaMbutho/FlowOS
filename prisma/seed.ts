@@ -40,7 +40,7 @@ async function main() {
   // Create users with PASSWORDS for authentication
   const asanda = await prisma.user.create({
     data: {
-      email: "asanda@mediaonafrica.co.za",
+      email: "asandambutho@icloud.com",
       name: "Asanda",
       role: Role.USER,
       password: await bcrypt.hash("password123", 10),
@@ -49,7 +49,7 @@ async function main() {
 
   const sizwe = await prisma.user.create({
     data: {
-      email: "sizwe@mediaonafrica.co.za",
+      email: "sizweschaba723@gmail.com",
       name: "Sizwe",
       role: Role.USER,
       password: await bcrypt.hash("password123", 10),
@@ -58,17 +58,35 @@ async function main() {
 
   const themba = await prisma.user.create({
     data: {
-      email: "themba@mediaonafrica.co.za",
+      email: "netshifirathemba0@gmail.com",
       name: "Themba",
       role: Role.MANAGER,
       password: await bcrypt.hash("password123", 10),
     },
   });
 
-  const shravan = await prisma.user.create({
+  const ridwaan = await prisma.user.create({
     data: {
-      email: "shravan@mediaonafrica.co.za",
-      name: "Shravan",
+      email: "sridwaan0@gmail.com",
+      name: "Ridwaan",
+      role: Role.USER,
+      password: await bcrypt.hash("password123", 10),
+    },
+  });
+
+  const lutendo = await prisma.user.create({
+    data: {
+      email: "lupreshie@gmail.com",
+      name: "Lutendo",
+      role: Role.USER,
+      password: await bcrypt.hash("password123", 10),
+    },
+  });
+
+  const matlhodi = await prisma.user.create({
+    data: {
+      email: "moilamatlhodi707@gmail.com",
+      name: "Matlhodi",
       role: Role.USER,
       password: await bcrypt.hash("password123", 10),
     },
@@ -183,7 +201,7 @@ async function main() {
       team: "Sales",
       tags: JSON.stringify(["automation", "sales"]),
       progress: 5,
-      assigneeId: shravan.id,
+      assigneeId: ridwaan.id,
       dueDate: new Date("2026-04-05"),
     },
   });
@@ -311,7 +329,7 @@ async function main() {
       {
         action: "created",
         details: "New workflow: Client Onboarding – TechCorp",
-        userId: shravan.id,
+        userId: ridwaan.id,
         workflowId: w1.id,
         createdAt: new Date(Date.now() - 17 * 60 * 1000),
       },
@@ -344,16 +362,22 @@ async function main() {
   console.log("");
   console.log("📋 Login Credentials:");
   console.log(
-    "   Themba (Supervisor):   themba@mediaonafrica.co.za / password123",
+    "   Themba (Supervisor):   netshifirathemba0@gmail.com / password123",
   );
   console.log(
-    "   Asanda (Team Member):  asanda@mediaonafrica.co.za / password123",
+    "   Asanda (Team Member):  asandambutho@icloud.com / password123",
   );
   console.log(
-    "   Sizwe (Team Member):   sizwe@mediaonafrica.co.za / password123",
+    "   Sizwe (Team Member):   sizweschaba723@gmail.com / password123",
   );
   console.log(
-    "   Shravan (Team Member): shravan@mediaonafrica.co.za / password123",
+    "   Ridwaan (Team Member):  sridwaan0@gmail.com / password123",
+  );
+  console.log(
+    "   Matlhodi (Team Member): moilamatlhodi707@gmail.com / password123",
+  );
+  console.log(
+    "   Lutendo (Team Member):  lupreshie@gmail.com / password123",
   );
 }
 

@@ -47,14 +47,14 @@ export function ActivityFeed() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
+      <div className="bg-card rounded-xl shadow-lg overflow-hidden border">
         <div className="p-5 space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="animate-pulse flex gap-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+              <div className="w-8 h-8 bg-muted rounded-full"></div>
               <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
               </div>
             </div>
           ))}
@@ -64,27 +64,27 @@ export function ActivityFeed() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
+    <div className="bg-card rounded-xl shadow-sm overflow-hidden border border-border">
       <div className="divide-y max-h-96 overflow-y-auto">
         {activities.map((activity) => (
-          <div key={activity.id} className="p-4 hover:bg-gray-50">
+          <div key={activity.id} className="p-4">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 bg-[#29d3aa]/15 rounded-full flex items-center justify-center flex-shrink-0">
                 <Users className="w-4 h-4 text-teal-600" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm">
                   <span className="font-medium">
                     {activity.user || "Someone"}
                   </span>
-                  <span className="text-gray-600 ml-2">{activity.action}</span>
-                  <span className="font-medium ml-2">
+                  <span className="text-muted-foreground ml-2">{activity.action}</span>
+                  <span className="font-medium ml-2 text-foreground">
                     {activity.details
                       ?.replace("Updated workflow: ", "")
                       .replace("New workflow: ", "")}
                   </span>
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {formatDate(activity.time)}
                 </p>
               </div>
@@ -92,7 +92,7 @@ export function ActivityFeed() {
           </div>
         ))}
         {activities.length === 0 && (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-muted-foreground">
             No recent team activity.
           </div>
         )}

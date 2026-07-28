@@ -216,6 +216,66 @@ export async function sendAssignmentNotification(
   }
 }
 
+// Send notification when a workflow is created.
+// A null assigneeId means the workflow was assigned to "Everyone" in the UI.
+export async function sendWorkflowLoadedNotification(workflowId: string) {
+  try {
+    const workflow = await prisma.workflow.findUnique({
+      where: { id: workflowId },
+      include: {
+        assignee: true,
+      },
+    });
+
+    if (!workflow) return { error: "Workflow not found" };
+
+    const recipients = workflow.assignee
+      ? [workflow.assignee]
+      : await prisma.user.findMany();
+
+    const results = [];
+
+    for (const user of recipients) {
+      if (!user.email) continue;
+
+      const emailResult = await sendAssignmentEmail(
+        user.email,
+        user.name || "Team member",
+        workflow.title,
+        "FlowOS",
+        workflow.id,
+      );
+
+      await prisma.notification.create({
+        data: {
+          type: "ASSIGNED",
+          title: `New workflow: ${workflow.title}`,
+          message: workflow.assigneeId
+            ? `You have been assigned to this workflow`
+            : `A new workflow has been assigned to everyone`,
+          userId: user.id,
+          workflowId: workflow.id,
+          emailSent: emailResult.success,
+          emailError: emailResult.success ? null : String(emailResult.error),
+          emailSentAt: emailResult.success ? new Date() : null,
+        },
+      });
+
+      results.push({
+        userId: user.id,
+        email: user.email,
+        emailSent: emailResult.success,
+        error: emailResult.error,
+      });
+    }
+
+    return { success: true, processed: results.length, results };
+  } catch (error) {
+    console.error("Error sending workflow loaded notification:", error);
+    return { error };
+  }
+}
+
 // Send notification for status change
 export async function sendStatusChangeNotification(
   workflowId: string,

@@ -232,7 +232,7 @@ export function CommentsSection({
                     </button>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap mt-1">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">
                     {comment.body}
                   </p>
                 )}

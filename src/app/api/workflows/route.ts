@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Priority, Stage } from "@prisma/client";
+import { sendWorkflowLoadedNotification } from "@/lib/email-notifications";
 
 // GET /api/workflows — fetch all workflows with assignee and files
 export async function GET(request: Request) {
@@ -61,6 +62,7 @@ export async function GET(request: Request) {
             color: "from-gray-400 to-gray-500",
           },
       dueDate: formatDueDate(w.dueDate, w.progress, w.completedAt),
+      dueDateIso: w.dueDate ? w.dueDate.toISOString() : null,
       completedAt: w.completedAt ? w.completedAt.toISOString() : null,
       files: w.files.map((f) => ({
         // 👈 ADD THIS: shape the files data
@@ -147,6 +149,8 @@ export async function POST(request: Request) {
       });
     }
 
+    await sendWorkflowLoadedNotification(workflow.id);
+
     return NextResponse.json(
       {
         id: workflow.id,
@@ -175,6 +179,7 @@ export async function POST(request: Request) {
           workflow.progress,
           workflow.completedAt,
         ),
+        dueDateIso: workflow.dueDate ? workflow.dueDate.toISOString() : null,
         files: workflow.files.map((f) => ({
           id: f.id,
           filename: f.filename,
@@ -258,7 +263,9 @@ function assigneeColor(name: string): string {
     Asanda: "from-purple-500 to-pink-500",
     Sizwe: "from-green-500 to-teal-500",
     Themba: "from-blue-500 to-cyan-500",
-    Shravan: "from-orange-500 to-red-500",
+    Ridwaan: "from-orange-500 to-red-500",
+    Lutendo: "from-indigo-500 to-blue-500",
+    Matlhodi: "from-rose-500 to-pink-500",
   };
   return colors[name] ?? "from-gray-400 to-gray-500";
 }

@@ -61,8 +61,8 @@ const TEAM_COLORS = [
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border rounded-xl shadow-lg px-3 py-2 text-xs">
-      {label && <p className="font-semibold text-gray-700 mb-1">{label}</p>}
+    <div className="bg-card border rounded-xl shadow-lg px-3 py-2 text-xs">
+      {label && <p className="font-semibold text-muted-foreground mb-1">{label}</p>}
       {payload.map((p: any) => (
         <p key={p.name} className="flex items-center gap-1.5">
           <span
@@ -90,14 +90,14 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border p-4 flex items-center gap-3">
+    <div className="bg-card rounded-2xl border p-4 flex items-center gap-3">
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}
       >
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div className="min-w-0">
-        <p className="text-xl font-bold text-gray-900 leading-none">{value}</p>
+        <p className="text-xl font-bold text-foreground leading-none">{value}</p>
         <p className="text-xs text-gray-500 mt-0.5 truncate">{label}</p>
         {sub && <p className="text-xs text-gray-400">{sub}</p>}
       </div>
@@ -115,9 +115,9 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border p-4 md:p-6">
+    <div className="bg-card rounded-2xl border p-4 md:p-6">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
       </div>
       {children}
@@ -159,12 +159,12 @@ export default function AnalyticsPage() {
             Real-time insights across all workflows
           </p>
         </div>
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl self-start sm:self-auto">
+        <div className="flex gap-1 bg-muted p-1 rounded-xl self-start sm:self-auto">
           {DAYS_OPTIONS.map((o) => (
             <button
               key={o.value}
               onClick={() => setDays(o.value)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${days === o.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${days === o.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
             >
               {o.label}
             </button>
@@ -337,7 +337,7 @@ export default function AnalyticsPage() {
                         />
                         <span className="text-xs text-gray-600">{s.label}</span>
                       </div>
-                      <span className="text-xs font-semibold text-gray-800">
+                      <span className="text-xs font-semibold text-foreground">
                         {s.value}
                       </span>
                     </div>
@@ -385,11 +385,11 @@ export default function AnalyticsPage() {
                             {p.label}
                           </span>
                         </div>
-                        <span className="text-xs font-semibold text-gray-800">
+                        <span className="text-xs font-semibold text-foreground">
                           {p.value}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div className="w-full bg-muted rounded-full h-1.5">
                         <div
                           className="h-1.5 rounded-full"
                           style={{
@@ -440,7 +440,7 @@ export default function AnalyticsPage() {
                         />
                         <span className="text-xs text-gray-600">{o.label}</span>
                       </div>
-                      <span className="text-xs font-semibold text-gray-800">
+                      <span className="text-xs font-semibold text-foreground">
                         {o.value}
                       </span>
                     </div>

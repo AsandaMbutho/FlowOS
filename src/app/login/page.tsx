@@ -52,8 +52,8 @@ export default function LoginPage() {
       role: "USER",
     },
     {
-      name: "Shravan (Developer)",
-      email: "shravan@mediaonafrica.co.za",
+      name: "Ridwaan (Developer)",
+      email: "sridwaan0@gmail.com",
       password: "password123",
       role: "USER",
     },

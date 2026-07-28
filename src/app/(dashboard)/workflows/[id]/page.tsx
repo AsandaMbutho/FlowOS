@@ -103,15 +103,24 @@ interface RawWorkflow {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan"];
+const TEAM_MEMBERS = [
+  "Asanda",
+  "Sizwe",
+  "Themba",
+  "Ridwaan",
+  "Matlhodi",
+  "Lutendo",
+  "Everyone",
+];
 
 const ASSIGNEE_COLORS: Record<string, string> = {
   Asanda: "from-purple-500 to-pink-500",
   Sizwe: "from-green-500 to-teal-500",
   Themba: "from-blue-500 to-cyan-500",
-  Shravan: "from-orange-500 to-red-500",
-  Lisa: "from-yellow-500 to-orange-500",
-  Mike: "from-red-500 to-pink-500",
+  Everyone: "from-slate-500 to-zinc-500",
+  Ridwaan: "from-orange-500 to-red-500",
+  Lutendo: "from-indigo-500 to-blue-500",
+  Matlhodi: "from-rose-500 to-pink-500",
 };
 
 const STATUS_FLOW: Status[] = [
@@ -491,13 +500,17 @@ export default function WorkflowDetailPage() {
     taskId: string,
     assigneeName: string | null,
   ) => {
+    const submittedAssigneeName =
+      assigneeName === "Everyone" ? null : assigneeName;
     setAssigneeDropdown(null);
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
           ? {
               ...t,
-              assignee: assigneeName ? { id: "", name: assigneeName } : null,
+              assignee: submittedAssigneeName
+                ? { id: "", name: submittedAssigneeName }
+                : null,
             }
           : t,
       ),
@@ -506,7 +519,7 @@ export default function WorkflowDetailPage() {
       await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assigneeName }),
+        body: JSON.stringify({ assigneeName: submittedAssigneeName }),
       });
     } catch {
       /* silently fail */

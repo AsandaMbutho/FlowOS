@@ -53,10 +53,10 @@ export function DocumentUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+      <div className="bg-card rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Upload Document</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -83,7 +83,7 @@ export function DocumentUploadModal({
                   className={`px-3 py-1.5 text-xs rounded-full border transition ${
                     project === p.toLowerCase()
                       ? "bg-[#0f1f3d] text-white border-[#0f1f3d]"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                      : "bg-card text-muted-foreground border-border hover:border-muted-foreground"
                   }`}
                 >
                   {p}

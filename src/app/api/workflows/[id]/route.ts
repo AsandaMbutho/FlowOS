@@ -147,9 +147,12 @@ export async function PATCH(
       include: { assignee: { select: { id: true, name: true } } },
     });
 
-    const assignee = assigneeName
-      ? await db.user.findFirst({ where: { name: assigneeName } })
-      : undefined;
+    const assignee =
+      assigneeName === null || assigneeName === ""
+        ? null
+        : assigneeName
+          ? await db.user.findFirst({ where: { name: assigneeName } })
+          : undefined;
 
     let fixedDueDate = undefined;
     if (dueDate !== undefined) {

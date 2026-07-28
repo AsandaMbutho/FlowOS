@@ -213,14 +213,18 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </Button>
 
       {/* Logo */}
-      <div className="hidden lg:flex items-center gap-2 shrink-0">
+      <Link
+        href="/dashboard"
+        className="hidden lg:flex items-center gap-2 shrink-0"
+        aria-label="Go to FlowOS home"
+      >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-[#29d3aa] to-[#14a882] text-white font-bold text-sm">
           F
         </div>
         <span className="font-semibold text-lg text-white">
           Flow<span className="text-[#29d3aa]">OS</span>
         </span>
-      </div>
+      </Link>
 
       {/* Search */}
       <div className="flex-1 flex items-center justify-center px-2 md:px-4">

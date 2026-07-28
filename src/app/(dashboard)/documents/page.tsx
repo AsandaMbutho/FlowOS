@@ -42,7 +42,7 @@ const typeColors: Record<string, string> = {
   DOC: "bg-blue-100 text-blue-700",
   XLS: "bg-emerald-100 text-emerald-700",
   PPT: "bg-orange-100 text-orange-700",
-  Other: "bg-gray-100 text-gray-600",
+  Other: "bg-muted text-muted-foreground",
 };
 
 export default function DocumentsPage() {
@@ -186,7 +186,7 @@ export default function DocumentsPage() {
               className={`px-3 py-1.5 text-sm rounded-lg transition ${
                 selectedProject === p
                   ? "bg-[#0f1f3d] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               {p === "all" ? "All" : p.charAt(0).toUpperCase() + p.slice(1)}
@@ -213,7 +213,7 @@ export default function DocumentsPage() {
             <Card key={doc.id} className="p-4 hover:shadow-md transition group">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                     <FileText className="w-5 h-5 text-gray-500" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -222,7 +222,7 @@ export default function DocumentsPage() {
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span
-                        className={`text-xs px-2 py-0.5 rounded ${typeColors[doc.fileType] || "bg-gray-100"}`}
+                        className={`text-xs px-2 py-0.5 rounded ${typeColors[doc.fileType] || "bg-muted"}`}
                       >
                         {doc.fileType}
                       </span>
@@ -242,7 +242,7 @@ export default function DocumentsPage() {
 
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                 <span
-                  className={`text-xs px-2 py-0.5 rounded ${projectColors[doc.project] || "bg-gray-100"}`}
+                  className={`text-xs px-2 py-0.5 rounded ${projectColors[doc.project] || "bg-muted"}`}
                 >
                   {doc.project.charAt(0).toUpperCase() + doc.project.slice(1)}
                 </span>
@@ -278,7 +278,7 @@ export default function DocumentsPage() {
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-card rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Upload Document</h2>
               <button
@@ -286,7 +286,7 @@ export default function DocumentsPage() {
                   setShowUploadModal(false);
                   setSelectedFile(null);
                 }}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-muted rounded"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -321,7 +321,7 @@ export default function DocumentsPage() {
                       className={`px-3 py-1.5 text-xs rounded-full border transition ${
                         uploadProject === p
                           ? "bg-[#0f1f3d] text-white border-[#0f1f3d]"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                          : "bg-card text-muted-foreground border-border hover:border-muted-foreground"
                       }`}
                     >
                       {p.charAt(0).toUpperCase() + p.slice(1)}

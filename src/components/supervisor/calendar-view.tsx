@@ -31,12 +31,19 @@ interface CalendarEvent {
   };
 }
 
-function parseDueDate(dueDate: any): Date | null {
-  if (!dueDate) return null;
-  if (dueDate === "Overdue") return new Date(2026, 3, 25);
-  if (dueDate === "Today") return new Date();
-  if (dueDate === "Thursday") return new Date(2026, 4, 1);
-  if (dueDate === "Friday") return new Date(2026, 4, 1);
+function parseDueDate(dueDate: any, dueDateIso?: string | null): Date | null {
+  if (dueDateIso) {
+    const date = new Date(dueDateIso);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  if (!dueDate || dueDate === "No due date") return null;
+  if (dueDate === "Today" || dueDate === "Overdue") return new Date();
+  if (dueDate === "Tomorrow") {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  }
 
   try {
     const date = new Date(dueDate);
@@ -58,7 +65,7 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
     const mappedEvents = workflows
       .filter((workflow) => workflow.dueDate)
       .map((workflow) => {
-        const parsedDate = parseDueDate(workflow.dueDate);
+        const parsedDate = parseDueDate(workflow.dueDate, workflow.dueDateIso);
         if (!parsedDate) return null;
         return {
           id: workflow.id,
@@ -84,6 +91,8 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
     } else if (action === "PREV") {
       if (currentView === "month") {
         newDate.setMonth(newDate.getMonth() - 1);
+      } else if (currentView === "week") {
+        newDate.setDate(newDate.getDate() - 7);
       } else {
         newDate.setDate(newDate.getDate() - 1);
       }
@@ -91,6 +100,8 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
     } else if (action === "NEXT") {
       if (currentView === "month") {
         newDate.setMonth(newDate.getMonth() + 1);
+      } else if (currentView === "week") {
+        newDate.setDate(newDate.getDate() + 7);
       } else {
         newDate.setDate(newDate.getDate() + 1);
       }
@@ -150,59 +161,67 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
   };
 
   return (
-    <div className="h-[550px] w-full">
+    <div className="h-[550px] w-full min-w-0">
       {/* Custom Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4 p-3 bg-gray-50 rounded-lg border">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 mb-4 p-3 bg-gray-50 rounded-lg border sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => handleNavigate("TODAY")}
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+            className="h-8 px-3 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
             Today
           </button>
           <button
+            type="button"
             onClick={() => handleNavigate("PREV")}
-            className="px-3 py-1.5 text-sm border rounded-md hover:bg-gray-100 transition"
+            className="h-8 px-3 text-sm border rounded-md hover:bg-muted transition"
           >
             ← Back
           </button>
           <button
+            type="button"
             onClick={() => handleNavigate("NEXT")}
-            className="px-3 py-1.5 text-sm border rounded-md hover:bg-gray-100 transition"
+            className="h-8 px-3 text-sm border rounded-md hover:bg-muted transition"
           >
             Next →
           </button>
         </div>
 
-        <span className="text-lg font-semibold">{formatViewLabel()}</span>
+        <span className="min-w-0 text-sm font-semibold sm:text-center sm:text-base lg:text-lg">
+          {formatViewLabel()}
+        </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => setCurrentView("month")}
-            className={`px-3 py-1.5 text-sm capitalize rounded-md transition ${
+            className={`h-8 px-3 text-sm capitalize rounded-md transition ${
               currentView === "month"
                 ? "bg-blue-600 text-white"
-                : "border hover:bg-gray-100"
+                : "border hover:bg-muted"
             }`}
           >
             Month
           </button>
           <button
+            type="button"
             onClick={() => setCurrentView("week")}
-            className={`px-3 py-1.5 text-sm capitalize rounded-md transition ${
+            className={`h-8 px-3 text-sm capitalize rounded-md transition ${
               currentView === "week"
                 ? "bg-blue-600 text-white"
-                : "border hover:bg-gray-100"
+                : "border hover:bg-muted"
             }`}
           >
             Week
           </button>
           <button
+            type="button"
             onClick={() => setCurrentView("day")}
-            className={`px-3 py-1.5 text-sm capitalize rounded-md transition ${
+            className={`h-8 px-3 text-sm capitalize rounded-md transition ${
               currentView === "day"
                 ? "bg-blue-600 text-white"
-                : "border hover:bg-gray-100"
+                : "border hover:bg-muted"
             }`}
           >
             Day

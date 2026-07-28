@@ -57,8 +57,11 @@ function colorForName(name: string): string {
   const map: Record<string, string> = {
     Asanda: "from-purple-500 to-pink-500",
     Sizwe: "from-blue-500 to-cyan-500",
-    Shravan: "from-orange-500 to-red-500",
     Themba: "from-teal-500 to-green-500",
+    Everyone: "from-slate-500 to-zinc-500",
+    Ridwaan: "from-orange-500 to-red-500",
+    Lutendo: "from-indigo-500 to-blue-500",
+    Matlhodi: "from-rose-500 to-pink-500",
   };
   return map[name] ?? "from-gray-400 to-gray-500";
 }

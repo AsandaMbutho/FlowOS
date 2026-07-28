@@ -316,7 +316,11 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
     return IconComponent || LayoutDashboard;
   };
 
-  const renderNavItem = (tab: Tab, depth: number = 0) => {
+  const renderNavItem = (
+    tab: Tab,
+    depth: number = 0,
+    closeOnNavigate: boolean = false,
+  ) => {
     const Icon = getIcon(tab.iconName);
     const isActive =
       pathname === tab.href || pathname?.startsWith(tab.href + "/");
@@ -343,10 +347,12 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
                 isExpanded ? "rotate-180" : "",
               )}
             />
-          </div>
+            </div>
           {isExpanded && (
             <div className="ml-2 border-l border-white/10 pl-2">
-              {tab.children?.map((child) => renderNavItem(child, depth + 1))}
+              {tab.children?.map((child) =>
+                renderNavItem(child, depth + 1, closeOnNavigate),
+              )}
             </div>
           )}
         </div>
@@ -391,6 +397,9 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
       <Link
         key={tab.id}
         href={tab.href}
+        onClick={() => {
+          if (closeOnNavigate) setSidebarOpen(false);
+        }}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all group relative",
           isActive
@@ -412,9 +421,45 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
     );
   };
 
+  const mobileNavigation = (
+    <div className="lg:hidden">
+      {sidebarOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="fixed inset-x-0 bottom-0 top-16 z-30 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside className="custom-scrollbar fixed inset-x-0 top-16 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0f1f3d] border-b border-white/10 px-4 py-4 shadow-2xl">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3 mb-4"
+              aria-label="Go to FlowOS home"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm">
+                F
+              </div>
+              <span className="text-white font-semibold text-lg">
+                Flow<span className="text-[#29d3aa]">OS</span>
+              </span>
+            </Link>
+
+            <nav className="space-y-1">
+              {tabs.map((tab) => renderNavItem(tab, 0, true))}
+            </nav>
+          </aside>
+        </>
+      )}
+    </div>
+  );
+
   if (!sidebarOpen) {
     return (
-      <aside className="fixed left-0 top-0 z-40 h-screen w-16 bg-[#0f1f3d] border-r border-white/5 flex flex-col items-center py-4 transition-all duration-300">
+      <>
+        {mobileNavigation}
+        <aside className="fixed left-0 top-0 z-40 hidden h-screen w-16 bg-[#0f1f3d] border-r border-white/5 lg:flex flex-col items-center py-4 transition-all duration-300">
         <button
           onClick={toggleSidebar}
           className="w-10 h-10 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors mb-4"
@@ -423,11 +468,15 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
           <ChevronRight className="w-5 h-5" />
         </button>
 
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm mb-6">
+        <Link
+          href="/dashboard"
+          className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm mb-6"
+          aria-label="Go to FlowOS home"
+        >
           F
-        </div>
+        </Link>
 
-        <nav className="flex-1 w-full space-y-1">
+        <nav className="custom-scrollbar flex-1 w-full space-y-1 overflow-y-auto overflow-x-hidden">
           {tabs.map((tab) => {
             const Icon = getIcon(tab.iconName);
             const isActive =
@@ -452,22 +501,29 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
             );
           })}
         </nav>
-      </aside>
+        </aside>
+      </>
     );
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-[#0f1f3d] border-r border-white/5 flex flex-col py-4 transition-all duration-300">
+    <>
+      {mobileNavigation}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 bg-[#0f1f3d] border-r border-white/5 lg:flex flex-col py-4 transition-all duration-300">
       {/* Header */}
       <div className="flex items-center justify-between px-4 mb-6">
-        <div className="flex items-center gap-3">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3"
+          aria-label="Go to FlowOS home"
+        >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm">
             F
           </div>
           <span className="text-white font-semibold text-lg">
             Flow<span className="text-[#29d3aa]">OS</span>
           </span>
-        </div>
+        </Link>
         <button
           onClick={toggleSidebar}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors"
@@ -478,7 +534,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="custom-scrollbar flex-1 px-3 pr-2 space-y-1 overflow-y-auto overflow-x-hidden">
         {tabs.map((tab) => renderNavItem(tab, 0))}
       </nav>
 
@@ -499,6 +555,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
           <span className="text-sm">Log Out</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

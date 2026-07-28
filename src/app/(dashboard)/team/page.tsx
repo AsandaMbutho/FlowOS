@@ -75,7 +75,7 @@ const defaultTeam: TeamMember[] = [
 const statusColors: Record<string, string> = {
   Active: "bg-emerald-100 text-emerald-700 border-emerald-200",
   Away: "bg-amber-100 text-amber-700 border-amber-200",
-  Inactive: "bg-gray-100 text-gray-600 border-gray-200",
+  Inactive: "bg-muted text-muted-foreground border-border",
 };
 
 const roleBadgeColors: Record<string, string> = {
@@ -223,7 +223,7 @@ export default function TeamPage() {
 
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
               <span
-                className={`text-xs px-3 py-1 rounded-full border font-medium flex items-center gap-1.5 ${roleBadgeColors[member.badge] || "bg-gray-100 text-gray-600 border-gray-200"}`}
+                className={`text-xs px-3 py-1 rounded-full border font-medium flex items-center gap-1.5 ${roleBadgeColors[member.badge] || "bg-muted text-muted-foreground border-border"}`}
               >
                 {member.badge}
               </span>
@@ -236,15 +236,15 @@ export default function TeamPage() {
 
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-muted-foreground">
                   Workflow Progress
                 </span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-bold text-foreground">
                   {member.avgProgress}%
                 </span>
               </div>
 
-              <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
+              <div className="w-full bg-muted rounded-full h-2.5 mb-3">
                 <div
                   className={`h-2.5 rounded-full ${getProgressColor(member.avgProgress)} transition-all duration-500`}
                   style={{ width: `${member.avgProgress}%` }}
@@ -253,7 +253,7 @@ export default function TeamPage() {
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="text-center p-2 bg-gray-50 rounded-lg">
-                  <div className="text-sm font-bold text-gray-800">
+                  <div className="text-sm font-bold text-foreground">
                     {member.workflowCount}
                   </div>
                   <div className="text-[10px] text-gray-400">Total</div>

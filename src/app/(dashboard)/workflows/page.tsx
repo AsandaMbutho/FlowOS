@@ -123,7 +123,15 @@ const progressColor = (p: number) =>
         ? "bg-yellow-500"
         : "bg-red-400";
 
-const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan"];
+const TEAM_MEMBERS = [
+  "Asanda",
+  "Sizwe",
+  "Themba",
+  "Ridwaan",
+  "Matlhodi",
+  "Lutendo",
+  "Everyone",
+];
 const TEAMS: string[] = ["Engineering", "Design", "Sales", "Operations"];
 const STATUSES: Status[] = [
   "In Progress",
@@ -1033,10 +1041,14 @@ function WorkflowsContent() {
     if (!validate()) return;
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        assigneeName: form.assigneeName === "Everyone" ? "" : form.assigneeName,
+      };
       const res = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
       const newWorkflow = await res.json();

@@ -739,26 +739,38 @@ export default function SettingsPage() {
                 {
                   name: "Themba",
                   role: "MANAGER",
-                  email: "themba@mediaonafrica.co.za",
+                  email: "netshifirathemba0@gmail.com",
                   color: "from-blue-500 to-cyan-500",
                 },
                 {
                   name: "Asanda",
                   role: "ADMIN",
-                  email: "asanda@mediaonafrica.co.za",
+                  email: "asandambutho@icloud.com",
                   color: "from-purple-500 to-pink-500",
                 },
                 {
                   name: "Sizwe",
                   role: "USER",
-                  email: "sizwe@mediaonafrica.co.za",
+                  email: "sizweschaba723@gmail.com",
                   color: "from-green-500 to-teal-500",
                 },
                 {
-                  name: "Shravan",
+                  name: "Ridwaan",
                   role: "USER",
-                  email: "shravan@mediaonafrica.co.za",
+                  email: "sridwaan0@gmail.com",
                   color: "from-orange-500 to-red-500",
+                },
+                {
+                  name: "Matlhodi",
+                  role: "USER",
+                  email: "moilamatlhodi707@gmail.com",
+                  color: "from-rose-500 to-pink-500",
+                },
+                {
+                  name: "Lutendo",
+                  role: "USER",
+                  email: "lupreshie@gmail.com",
+                  color: "from-indigo-500 to-blue-500",
                 },
               ].map((member) => (
                 <div

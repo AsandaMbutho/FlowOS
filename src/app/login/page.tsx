@@ -31,30 +31,30 @@ export default function LoginPage() {
     }
   };
 
-  // Quick login buttons for demo
+  // Quick login buttons for demo - All use Password123
   const demoLogins = [
     {
       name: "Themba (Supervisor)",
-      email: "netshifirathemba0@gmail.com",
-      password: "password123",
+      email: "netshifirathmba0@gmail.com",
+      password: "Password123",
       role: "MANAGER",
     },
     {
       name: "Asanda (Developer)",
       email: "asandambutho@icloud.com",
-      password: "password123",
+      password: "Password123",
       role: "USER",
     },
     {
       name: "Sizwe (Developer)",
       email: "sizweschaba723@gmail.com",
-      password: "password123",
+      password: "Password123",
       role: "USER",
     },
     {
       name: "Ridwaan (Developer)",
       email: "sridwaan0@gmail.com",
-      password: "password123",
+      password: "Password123",
       role: "USER",
     },
   ];
@@ -113,7 +113,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C48C] focus:border-transparent"
-              placeholder="password123"
+              placeholder="Password123"
               required
             />
           </div>
@@ -157,7 +157,11 @@ export default function LoginPage() {
                 <p className="text-xs text-gray-500">{demo.email}</p>
               </div>
               <span
-                className={`text-xs px-2 py-1 rounded ${demo.role === "MANAGER" ? "bg-purple-100 text-purple-600" : "bg-gray-100 text-gray-600"}`}
+                className={`text-xs px-2 py-1 rounded ${
+                  demo.role === "MANAGER"
+                    ? "bg-purple-100 text-purple-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
               >
                 {demo.role === "MANAGER" ? "Supervisor" : "Team Member"}
               </span>

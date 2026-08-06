@@ -35,18 +35,18 @@ enum NotifType {
   MENTION
 }
 
-enum LeaveType {
-  SICK
-  VACATION
-  PERSONAL
-  OTHER
-}
+// enum LeaveType {
+//   SICK
+//   VACATION
+//   PERSONAL
+//   OTHER
+// }
 
-enum LeaveStatus {
-  PENDING
-  APPROVED
-  DENIED
-}
+// enum LeaveStatus {
+//   PENDING
+//   APPROVED
+//   DENIED
+// }
 
 model User {
   id              String           @id @default(cuid())
@@ -61,9 +61,8 @@ model User {
   comments        Comment[]        @relation("CommentAuthor")
   mentionedIn     CommentMention[]
   documents       Document[]
-  leaveRequests   LeaveRequest[]   @relation("UserLeaveRequests")
-  leaveDecisions  LeaveRequest[]   @relation("LeaveApprovedBy")
-  currentLeave    Json?            // { type, startDate, endDate } for availability
+  // leaveRequests   LeaveRequest[]    @relation("UserLeaveRequests")
+  // leaveDecisions  LeaveRequest[]    @relation("LeaveApprovedBy")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -84,26 +83,24 @@ model Workflow {
   tasks       Task[]     @relation("WorkflowTasks")
   activities  Activity[] @relation("WorkflowActivities")
   comments    Comment[]
-  files       File[]     // File attachments
-  documents   Document[] // ← ADDED: Documents linked to workflow
+  files       File[]
+  documents   Document[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   
-  // Stage History for accurate analytics
   stageHistory WorkflowStageHistory[]
 }
 
-// File model for attachments
 model File {
   id           String   @id @default(cuid())
-  filename     String   // Storage filename (path in blob)
-  originalName String   // Original user filename
-  url          String   // Public URL
-  size         Int      // File size in bytes
-  mimeType     String   // e.g. image/png, application/pdf
+  filename     String
+  originalName String
+  url          String
+  size         Int
+  mimeType     String
   workflowId   String
   workflow     Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  uploadedBy   String?  // User ID who uploaded it (optional for now)
+  uploadedBy   String?
   createdAt    DateTime @default(now())
   
   @@index([workflowId])
@@ -169,7 +166,6 @@ model CommentMention {
   user    User    @relation(fields: [userId], references: [id])
 }
 
-// Workflow Stage History - tracks when workflows enter/exit each stage
 model WorkflowStageHistory {
   id          String   @id @default(cuid())
   workflowId  String
@@ -183,14 +179,13 @@ model WorkflowStageHistory {
   @@index([enteredAt])
 }
 
-// Document model - for project-based document storage
 model Document {
   id          String    @id @default(cuid())
   name        String
   fileUrl     String
   fileType    String    @default("Other")
   fileSize    String    @default("0 KB")
-  project     String    // "flowos", "cybersafe", "elearning", "crm"
+  project     String
   workflowId  String?
   workflow    Workflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
   uploadedBy  String?
@@ -199,24 +194,40 @@ model Document {
   updatedAt   DateTime  @updatedAt
 }
 
-// Leave Request model
-model LeaveRequest {
-  id                 String       @id @default(cuid())
-  userId             String
-  user               User         @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
-  type               LeaveType    @default(SICK)
-  startDate          DateTime
-  endDate            DateTime
-  reason             String       @db.Text // Allow longer reasons
-  status             LeaveStatus  @default(PENDING)
-  doctorsNoteDataUrl String?      @db.Text // Base64 image stored as text
-  doctorsNoteName    String?      // Original filename of the note
-  createdAt          DateTime     @default(now())
-  decidedAt          DateTime?
-  decidedBy          String?
-  approvedByUser     User?        @relation("LeaveApprovedBy", fields: [decidedBy], references: [id])
-  
-  @@index([userId])
-  @@index([status])
-  @@index([startDate])
-}
+// Leave Request model - COMMENTED OUT
+// model LeaveRequest {
+//   id                 String       @id @default(cuid())
+//   userId             String
+//   user               User         @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+//   type               LeaveType    @default(SICK)
+//   startDate          DateTime
+//   endDate            DateTime
+//   reason             String       @db.Text
+//   status             LeaveStatus  @default(PENDING)
+//   doctorsNoteDataUrl String?      @db.Text
+//   doctorsNoteName    String?      
+//   createdAt          DateTime     @default(now())
+//   decidedAt          DateTime?
+//   decidedBy          String?
+//   approvedByUser     User?        @relation("LeaveApprovedBy", fields: [decidedBy], references: [id])
+//   
+//   @@index([userId])
+//   @@index([status])
+//   @@index([startDate])
+// }
+
+// Leave Balance model - COMMENTED OUT
+// model LeaveBalance {
+//   id          String   @id @default(cuid())
+//   userId      String   @unique
+//   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   annualEntitlement  Float @default(20)
+//   annualUsed         Float @default(0)
+//   annualCarryOver    Float @default(0)
+//   sickEntitlement    Float @default(10)
+//   sickUsed           Float @default(0)
+//   sickCarryOver      Float @default(0)
+//   personalEntitlement Float @default(3)
+//   personalUsed        Float @default(0)
+//   updatedAt DateTime @updatedAt
+// }

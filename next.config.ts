@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -14,6 +15,10 @@ const nextConfig: NextConfig = {
 
   experimental: {
     optimizeCss: true,
+  },
+
+  turbopack: {
+    root: path.resolve(__dirname),
   },
 };
 

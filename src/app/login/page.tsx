@@ -35,19 +35,19 @@ export default function LoginPage() {
   const demoLogins = [
     {
       name: "Themba (Supervisor)",
-      email: "themba@mediaonafrica.co.za",
+      email: "netshifirathemba0@gmail.com",
       password: "password123",
       role: "MANAGER",
     },
     {
       name: "Asanda (Developer)",
-      email: "asanda@mediaonafrica.co.za",
+      email: "asandambutho@icloud.com",
       password: "password123",
       role: "USER",
     },
     {
       name: "Sizwe (Developer)",
-      email: "sizwe@mediaonafrica.co.za",
+      email: "sizweschaba723@gmail.com",
       password: "password123",
       role: "USER",
     },
@@ -113,7 +113,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C48C] focus:border-transparent"
-              placeholder="••••••••"
+              placeholder="password123"
               required
             />
           </div>

@@ -1,0 +1,15 @@
+
+> flowos@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://169.254.231.111:3000
+- Environments: .env
+✓ Ready in 5.0s
+Creating turbopack project { dir: 'C:\\Users\\sridw\\Desktop\\Update\\FlowOS', testMode: true }
+○ Compiling middleware ...
+- Experiments (use with caution):
+  ✓ optimizeCss
+
+○ Compiling /login ...

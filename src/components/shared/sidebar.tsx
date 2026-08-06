@@ -30,6 +30,8 @@ import {
   Smartphone,
   Lightbulb,
   Briefcase,
+  Bot,
+  CalendarCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +69,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Smartphone,
   Lightbulb,
   Briefcase,
+  Bot,
+  CalendarCheck,
 };
 
 const DEFAULT_TABS: Tab[] = [
@@ -202,7 +206,25 @@ const DEFAULT_TABS: Tab[] = [
         iconName: "Briefcase",
         href: "/services/consulting",
       },
+      {
+        id: "svc-ai",
+        label: "AI Services",
+        iconName: "Bot",
+        href: "/services/ai-services",
+      },
     ],
+  },
+  {
+    id: "ai-assistant",
+    label: "AI Assistant",
+    iconName: "Bot",
+    href: "/ai-assistant",
+  },
+  {
+    id: "leave",
+    label: "Leave Requests",
+    iconName: "CalendarCheck",
+    href: "/leave",
   },
   { id: "team", label: "Team", iconName: "UserCircle", href: "/team" },
   {

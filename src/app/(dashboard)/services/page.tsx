@@ -79,6 +79,16 @@ const services = [
     bgColor: "bg-slate-50 dark:bg-slate-950/30",
     href: "/services/consulting",
   },
+  {
+    id: "ai-services",
+    title: "AI Services",
+    description:
+      "Practical AI assistants, automation, and workflow intelligence for teams.",
+    icon: Cpu,
+    color: "from-emerald-500 to-blue-500",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+    href: "/services/ai-services",
+  },
 ];
 
 export default function ServicesPage() {
@@ -142,6 +152,7 @@ export default function ServicesPage() {
                     {service.id === "mobile-solutions" && "Mobile"}
                     {service.id === "digital-strategy" && "Strategy"}
                     {service.id === "consulting" && "Consulting"}
+                    {service.id === "ai-services" && "AI"}
                   </span>
                 </div>
               </Card>

@@ -35,21 +35,37 @@ enum NotifType {
   MENTION
 }
 
+enum LeaveType {
+  SICK
+  VACATION
+  PERSONAL
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
 model User {
-  id            String           @id @default(cuid())
-  email         String           @unique
-  name          String?
-  avatar        String?
-  password      String?
-  role          Role             @default(USER)
-  workflows     Workflow[]       @relation("UserWorkflows")
-  assignedTasks Task[]           @relation("UserTasks")
-  activities    Activity[]       @relation("UserActivities")
-  comments      Comment[]        @relation("CommentAuthor")
-  mentionedIn   CommentMention[]
-  documents     Document[]       // ← ADDED: Documents uploaded by user
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String?
+  avatar          String?
+  password        String?
+  role            Role             @default(USER)
+  workflows       Workflow[]       @relation("UserWorkflows")
+  assignedTasks   Task[]           @relation("UserTasks")
+  activities      Activity[]       @relation("UserActivities")
+  comments        Comment[]        @relation("CommentAuthor")
+  mentionedIn     CommentMention[]
+  documents       Document[]
+  leaveRequests   LeaveRequest[]   @relation("UserLeaveRequests")
+  leaveDecisions  LeaveRequest[]   @relation("LeaveApprovedBy")
+  currentLeave    Json?            // { type, startDate, endDate } for availability
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Workflow {
@@ -181,4 +197,26 @@ model Document {
   user        User?     @relation(fields: [uploadedBy], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// Leave Request model
+model LeaveRequest {
+  id                 String       @id @default(cuid())
+  userId             String
+  user               User         @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+  type               LeaveType    @default(SICK)
+  startDate          DateTime
+  endDate            DateTime
+  reason             String       @db.Text // Allow longer reasons
+  status             LeaveStatus  @default(PENDING)
+  doctorsNoteDataUrl String?      @db.Text // Base64 image stored as text
+  doctorsNoteName    String?      // Original filename of the note
+  createdAt          DateTime     @default(now())
+  decidedAt          DateTime?
+  decidedBy          String?
+  approvedByUser     User?        @relation("LeaveApprovedBy", fields: [decidedBy], references: [id])
+  
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
 }

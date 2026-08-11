@@ -1,26 +1,32 @@
-import { prisma } from './prisma';
-import { LeaveType, Prisma } from '@prisma/client';
+import { prisma } from "./prisma";
+import { LeaveType } from "@prisma/client";
 
 // Image compression constants for doctor's notes
-const MAX_DIMENSION = 1200; // px, longest side after resize
+const MAX_DIMENSION = 1200;
 const JPEG_QUALITY = 0.6;
-const MAX_DATA_URL_BYTES = 700 * 1024; // leaves headroom under PostgreSQL's limits
+const MAX_DATA_URL_BYTES = 700 * 1024;
 
 /**
- * Compress an image file to a data URL (client-side utility)
- * Used for doctor's notes - images are compressed and stored as base64
- * This is a browser-only function
+ * Compress an image file to a data URL.
+ * Browser-only utility used for doctor's notes.
  */
 export async function compressImageFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
 
-    reader.onerror = () => reject(new Error('Could not read the file.'));
+    reader.onerror = () => {
+      reject(new Error("Could not read the file."));
+    };
+
     reader.onload = () => {
-      img.onerror = () => reject(new Error('Could not read the image.'));
+      img.onerror = () => {
+        reject(new Error("Could not read the image."));
+      };
+
       img.onload = () => {
         let { width, height } = img;
+
         if (width > height && width > MAX_DIMENSION) {
           height = Math.round((height * MAX_DIMENSION) / width);
           width = MAX_DIMENSION;
@@ -29,24 +35,36 @@ export async function compressImageFile(file: File): Promise<string> {
           height = MAX_DIMENSION;
         }
 
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          reject(new Error("Could not create image canvas."));
+          return;
+        }
+
+        context.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+
         if (dataUrl.length > MAX_DATA_URL_BYTES) {
           reject(
             new Error(
-              'Image is still too large after compression. Try a smaller photo or crop it tighter.'
-            )
+              "Image is still too large after compression. Try a smaller photo or crop it tighter.",
+            ),
           );
           return;
         }
+
         resolve(dataUrl);
       };
+
       img.src = reader.result as string;
     };
+
     reader.readAsDataURL(file);
   });
 }
@@ -58,14 +76,16 @@ export interface SubmitLeaveRequestInput {
   reason: string;
   doctorsNoteDataUrl?: string;
   doctorsNoteName?: string;
+  isHalfDay?: boolean;
+  halfDayType?: string;
 }
 
 /**
- * Submit a leave request for a user
+ * Submit a leave request for a user.
  */
 export async function submitLeaveRequest(
   userId: string,
-  input: SubmitLeaveRequestInput
+  input: SubmitLeaveRequestInput,
 ) {
   const leaveRequest = await prisma.leaveRequest.create({
     data: {
@@ -74,119 +94,182 @@ export async function submitLeaveRequest(
       startDate: input.startDate,
       endDate: input.endDate,
       reason: input.reason,
-      status: 'PENDING',
+      status: "PENDING",
       doctorsNoteDataUrl: input.doctorsNoteDataUrl || null,
-      doctorsNoteName: input.doctorsNoteName || null
+      doctorsNoteName: input.doctorsNoteName || null,
+      isHalfDay: input.isHalfDay || false,
+      halfDayType: input.isHalfDay ? input.halfDayType : null,
     },
     include: {
-      user: { select: { id: true, name: true, email: true } }
-    }
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      reviewer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 
   return leaveRequest;
 }
 
 /**
- * Get leave requests for a user
+ * Get leave requests for a user.
  */
 export async function getUserLeaveRequests(userId: string) {
   return prisma.leaveRequest.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
     include: {
-      user: { select: { name: true } },
-      approvedByUser: { select: { name: true } }
-    }
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      reviewer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 }
 
 /**
- * Get all pending leave requests (for managers/admins to review)
+ * Get all pending leave requests for managers/admins to review.
  */
 export async function getPendingLeaveRequests() {
   return prisma.leaveRequest.findMany({
-    where: { status: 'PENDING' },
-    orderBy: { createdAt: 'desc' },
+    where: {
+      status: "PENDING",
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
     include: {
-      user: { select: { id: true, name: true, email: true } },
-      approvedByUser: { select: { name: true } }
-    }
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      reviewer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 }
 
 export interface DecideLeaveRequestInput {
-  status: 'APPROVED' | 'DENIED';
-  decidedBy: string; // User ID of the approver
+  status: "APPROVED" | "REJECTED";
+  reviewerId: string;
+  managerNote?: string;
 }
 
 /**
- * Approve or deny a leave request
- * If approved, updates the user's currentLeave field for availability checking
+ * Approve or reject a leave request.
  */
 export async function decideLeaveRequest(
   leaveRequestId: string,
-  input: DecideLeaveRequestInput
+  input: DecideLeaveRequestInput,
 ) {
   const leaveRequest = await prisma.leaveRequest.findUnique({
-    where: { id: leaveRequestId }
+    where: {
+      id: leaveRequestId,
+    },
   });
 
   if (!leaveRequest) {
-    throw new Error('Leave request not found');
+    throw new Error("Leave request not found");
   }
 
-  // Update the leave request
-  const updated = await prisma.leaveRequest.update({
-    where: { id: leaveRequestId },
-    data: {
-      status: input.status,
-      decidedAt: new Date(),
-      decidedBy: input.decidedBy
+  const reviewer = await prisma.user.findUnique({
+    where: {
+      id: input.reviewerId,
     },
-    include: {
-      user: { select: { name: true } },
-      approvedByUser: { select: { name: true } }
-    }
   });
 
-  // Update user's currentLeave if approved
-  if (input.status === 'APPROVED') {
-    await prisma.user.update({
-      where: { id: leaveRequest.userId },
-      data: {
-        currentLeave: {
-          type: leaveRequest.type,
-          startDate: leaveRequest.startDate.toISOString(),
-          endDate: leaveRequest.endDate.toISOString()
-        }
-      }
-    });
-  } else if (input.status === 'DENIED') {
-    // Clear currentLeave if denying
-    await prisma.user.update({
-      where: { id: leaveRequest.userId },
-      data: { currentLeave: Prisma.JsonNull }
-    });
+  if (!reviewer) {
+    throw new Error("Reviewer not found");
   }
+
+  const updated = await prisma.leaveRequest.update({
+    where: {
+      id: leaveRequestId,
+    },
+    data: {
+      status: input.status,
+      managerNote: input.managerNote || null,
+      reviewerId: input.reviewerId,
+      reviewedAt: new Date(),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      reviewer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
 
   return updated;
 }
 
 /**
- * Get all users currently on leave (for availability view)
+ * Get all users currently on approved leave.
  */
 export async function getUsersCurrentlyOnLeave() {
-  const today = new Date().toISOString().split('T')[0];
-  
+  const today = new Date();
+
+  const startOfToday = new Date(today);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endOfToday = new Date(today);
+  endOfToday.setHours(23, 59, 59, 999);
+
   const usersOnLeave = await prisma.user.findMany({
     where: {
       leaveRequests: {
         some: {
-          status: 'APPROVED',
-          startDate: { lte: new Date(today) },
-          endDate: { gte: new Date(today) }
-        }
-      }
+          status: "APPROVED",
+          startDate: {
+            lte: endOfToday,
+          },
+          endDate: {
+            gte: startOfToday,
+          },
+        },
+      },
     },
     select: {
       id: true,
@@ -194,27 +277,62 @@ export async function getUsersCurrentlyOnLeave() {
       email: true,
       leaveRequests: {
         where: {
-          status: 'APPROVED',
-          startDate: { lte: new Date(today) },
-          endDate: { gte: new Date(today) }
+          status: "APPROVED",
+          startDate: {
+            lte: endOfToday,
+          },
+          endDate: {
+            gte: startOfToday,
+          },
         },
         select: {
+          id: true,
           type: true,
           startDate: true,
           endDate: true,
-          reason: true
-        }
-      }
-    }
+          reason: true,
+          isHalfDay: true,
+          halfDayType: true,
+        },
+      },
+    },
   });
 
   return usersOnLeave;
 }
 
 /**
- * Polish a leave reason using the AI assistant
+ * Get a single leave request by ID.
+ */
+export async function getLeaveRequestById(leaveRequestId: string) {
+  return prisma.leaveRequest.findUnique({
+    where: {
+      id: leaveRequestId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      reviewer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Polish a leave reason using the AI assistant.
  */
 export async function polishLeaveReason(rawText: string): Promise<string> {
-  const { polishLeaveReason: polishAI } = await import('./ai-service');
+  const { polishLeaveReason: polishAI } = await import("./ai-service");
+
   return polishAI(rawText);
 }

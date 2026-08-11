@@ -8,16 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 
 const TYPE_LABELS = {
+  ANNUAL: 'Annual leave',
   SICK: 'Sick leave',
-  VACATION: 'Vacation',
   PERSONAL: 'Personal',
-  OTHER: 'Other'
 };
 
 const STATUS_LABELS = {
   PENDING: 'Pending review',
   APPROVED: 'Approved',
-  DENIED: 'Denied'
+  REJECTED: 'Rejected',
 };
 
 export function LeaveRequestForm() {
@@ -118,12 +117,11 @@ export function LeaveRequestForm() {
             <select
               value={formData.type}
               onChange={(e) => handleInputChange('type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
+              <option value="ANNUAL">Annual leave</option>
               <option value="SICK">Sick leave</option>
-              <option value="VACATION">Vacation</option>
               <option value="PERSONAL">Personal</option>
-              <option value="OTHER">Other</option>
             </select>
           </div>
 
@@ -155,7 +153,7 @@ export function LeaveRequestForm() {
               value={formData.reason}
               onChange={(e) => handleInputChange('reason', e.target.value)}
               placeholder="Briefly explain why you're requesting leave"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <Button
               type="button"
@@ -180,7 +178,7 @@ export function LeaveRequestForm() {
                 onChange={(e) => setDoctorsNote(e.target.files?.[0] || null)}
                 className="w-full text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 JPG/PNG images are automatically compressed
               </p>
             </div>
@@ -190,8 +188,8 @@ export function LeaveRequestForm() {
             <div
               className={`p-3 rounded text-sm ${
                 status.startsWith('Error')
-                  ? 'bg-red-50 text-red-800'
-                  : 'bg-blue-50 text-blue-800'
+                  ? 'bg-red-500/10 text-red-700 dark:text-red-300'
+                  : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
               }`}
             >
               {status || hookError?.message}

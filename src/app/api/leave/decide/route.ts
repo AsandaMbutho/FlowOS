@@ -1,50 +1,76 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { decideLeaveRequest, getPendingLeaveRequests } from '@/lib/leave-service';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import {
+  decideLeaveRequest,
+  getPendingLeaveRequests,
+} from "@/lib/leave-service";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    // Check if user is admin or manager
+    // Only supervisors can review leave requests.
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: {
+        email: session.user.email,
+      },
     });
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || user.role !== "MANAGER") {
       return NextResponse.json(
-        { error: 'Forbidden: Only admins and managers can approve/deny leave requests' },
-        { status: 403 }
+        {
+          error:
+            "Forbidden: Only supervisors can approve/reject leave requests",
+        },
+        { status: 403 },
       );
     }
 
     const body = await req.json();
-    const { leaveRequestId, status } = body;
 
-    if (!leaveRequestId || !status || !['APPROVED', 'DENIED'].includes(status)) {
+    const {
+      leaveRequestId,
+      status,
+      managerNote,
+    } = body;
+
+    // Validate request
+    if (
+      !leaveRequestId ||
+      !status ||
+      !["APPROVED", "REJECTED"].includes(status)
+    ) {
       return NextResponse.json(
-        { error: 'Invalid status or missing leaveRequestId' },
-        { status: 400 }
+        {
+          error:
+            "Invalid status or missing leaveRequestId. Status must be APPROVED or REJECTED.",
+        },
+        { status: 400 },
       );
     }
 
     const updated = await decideLeaveRequest(leaveRequestId, {
       status,
-      decidedBy: user.id
+      reviewerId: user.id,
+      managerNote,
     });
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error('Error deciding leave request:', error);
+    console.error("Error deciding leave request:", error);
+
     return NextResponse.json(
-      { error: 'Failed to process leave request decision' },
-      { status: 500 }
+      { error: "Failed to process leave request decision" },
+      { status: 500 },
     );
   }
 }
@@ -54,18 +80,23 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    // Check if user is admin or manager
+    // Only supervisors can see pending leave requests.
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: {
+        email: session.user.email,
+      },
     });
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || user.role !== "MANAGER") {
       return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
+        { error: "Forbidden: Only supervisors can see pending leave requests" },
+        { status: 403 },
       );
     }
 
@@ -73,10 +104,14 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(pendingRequests);
   } catch (error) {
-    console.error('Error fetching pending leave requests:', error);
+    console.error(
+      "Error fetching pending leave requests:",
+      error,
+    );
+
     return NextResponse.json(
-      { error: 'Failed to fetch pending leave requests' },
-      { status: 500 }
+      { error: "Failed to fetch pending leave requests" },
+      { status: 500 },
     );
   }
 }

@@ -6,22 +6,21 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 const TYPE_LABELS = {
+  ANNUAL: 'Annual leave',
   SICK: 'Sick leave',
-  VACATION: 'Vacation',
   PERSONAL: 'Personal',
-  OTHER: 'Other'
 };
 
 const STATUS_LABELS = {
   PENDING: 'Pending review',
   APPROVED: 'Approved',
-  DENIED: 'Denied'
+  REJECTED: 'Rejected',
 };
 
 const STATUS_COLORS = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  APPROVED: 'bg-green-100 text-green-800',
-  DENIED: 'bg-red-100 text-red-800'
+  PENDING: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
+  APPROVED: 'bg-green-500/10 text-green-700 dark:text-green-300',
+  REJECTED: 'bg-red-500/10 text-red-700 dark:text-red-300',
 };
 
 export function LeaveRequestsList() {
@@ -34,7 +33,7 @@ export function LeaveRequestsList() {
   if (loading && leaveRequests.length === 0) {
     return (
       <Card className="p-6">
-        <p className="text-gray-500">Loading your leave requests...</p>
+        <p className="text-muted-foreground">Loading your leave requests...</p>
       </Card>
     );
   }
@@ -44,20 +43,20 @@ export function LeaveRequestsList() {
       <h3 className="text-lg font-semibold mb-4">Your Leave Requests</h3>
       
       {leaveRequests.length === 0 ? (
-        <p className="text-gray-500 text-sm">No leave requests yet</p>
+        <p className="text-muted-foreground text-sm">No leave requests yet</p>
       ) : (
         <div className="space-y-3">
           {leaveRequests.map((request: LeaveRequest) => (
             <div
               key={request.id}
-              className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              className="p-4 border border-border rounded-lg hover:bg-muted/40 transition"
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <p className="font-medium">
                     {TYPE_LABELS[request.type as keyof typeof TYPE_LABELS]}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {new Date(request.startDate).toLocaleDateString()} to{' '}
                     {new Date(request.endDate).toLocaleDateString()}
                   </p>
@@ -72,7 +71,7 @@ export function LeaveRequestsList() {
               </div>
 
               {request.reason && (
-                <p className="text-sm text-gray-700 mb-2">
+                <p className="text-sm text-foreground/80 mb-2">
                   Reason: {request.reason}
                 </p>
               )}
@@ -88,16 +87,16 @@ export function LeaveRequestsList() {
                 </a>
               )}
 
-              <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+              <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
                 <p>
                   Submitted:{' '}
                   {new Date(request.createdAt).toLocaleDateString()}
                 </p>
-                {request.decidedAt && (
+                {request.reviewedAt && (
                   <p>
-                    Decided:{' '}
-                    {new Date(request.decidedAt).toLocaleDateString()} by{' '}
-                    {request.approvedByUser?.name || 'Unknown'}
+                    Reviewed:{' '}
+                    {new Date(request.reviewedAt).toLocaleDateString()} by{' '}
+                    {request.reviewer?.name || 'Unknown'}
                   </p>
                 )}
               </div>

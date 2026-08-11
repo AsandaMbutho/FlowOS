@@ -38,18 +38,22 @@ export default function PendingApprovals() {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // TEMPORARY: Set this based on role
-  // Later: session?.user?.role === "MANAGER" || "ADMIN"
-  const isManager = false; // 👈 SET TO TRUE FOR MANAGER TESTING
+  const isSupervisor = session?.user?.role === "MANAGER";
 
   useEffect(() => {
-    fetchPendingRequests();
-  }, []);
+    if (isSupervisor) {
+      fetchPendingRequests();
+      return;
+    }
+
+    setRequests([]);
+    setLoading(false);
+  }, [isSupervisor]);
 
   const fetchPendingRequests = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/leave/requests?status=PENDING");
+      const res = await fetch("/api/leave/decide");
       if (!res.ok) throw new Error("Failed to fetch pending requests");
       const data = await res.json();
       setRequests(data);
@@ -166,8 +170,7 @@ export default function PendingApprovals() {
                 </p>
               </div>
 
-              {/* 👇 ONLY SHOW BUTTONS FOR MANAGERS */}
-              {isManager && (
+              {isSupervisor && (
                 <div className="flex gap-2 w-full md:w-auto">
                   <Button
                     size="sm"

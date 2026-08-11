@@ -1,28 +1,38 @@
-'use client';
+"use client";
 
-import { FormEvent, useRef, useState } from 'react';
-import { Bot, Loader2, Send, Sparkles, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAIAssistant } from '@/lib/hooks/use-ai-assistant';
-import { cn } from '@/lib/utils';
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { Bot, Loader2, RotateCcw, Send, Sparkles, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAIAssistant } from "@/lib/hooks/use-ai-assistant";
+import { cn } from "@/lib/utils";
 
 type ChatMessage = {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   text: string;
+  createdAt: Date;
   actionExecuted?: boolean;
 };
+
+const QUICK_PROMPTS = [
+  "Summarize my current workflows",
+  "Create a task for tomorrow",
+  "Draft a supervisor update",
+  "What needs attention today?",
+];
 
 export function AIAssistantChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: 'welcome',
-      role: 'assistant',
-      text: 'Ask me to draft an update, summarize work, create a task, or add a workflow item.',
+      id: "welcome",
+      role: "assistant",
+      text: "Hi, I am your FlowOS assistant. Ask me to summarize work, draft updates, create tasks, or add workflow items.",
+      createdAt: new Date(),
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
   const { sendMessage, loading, error, resetConversation } = useAIAssistant({
     onSuccess: (message) => {
@@ -30,24 +40,32 @@ export function AIAssistantChat() {
         ...prev,
         {
           id: crypto.randomUUID(),
-          role: 'assistant',
+          role: "assistant",
           text: message.text,
+          createdAt: new Date(),
           actionExecuted: message.actionExecuted,
         },
       ]);
     },
   });
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, loading]);
 
-    const userMessage = input.trim();
+  const sendUserMessage = async (text: string) => {
+    const userMessage = text.trim();
     if (!userMessage || loading) return;
 
-    setInput('');
+    setInput("");
     setMessages((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), role: 'user', text: userMessage },
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        text: userMessage,
+        createdAt: new Date(),
+      },
     ]);
 
     try {
@@ -57,13 +75,19 @@ export function AIAssistantChat() {
     }
   };
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await sendUserMessage(input);
+  };
+
   const handleReset = () => {
     resetConversation();
     setMessages([
       {
         id: crypto.randomUUID(),
-        role: 'assistant',
-        text: 'Conversation reset. What should we work on next?',
+        role: "assistant",
+        text: "Conversation reset. What should we work on next?",
+        createdAt: new Date(),
       },
     ]);
     formRef.current?.reset();
@@ -71,9 +95,9 @@ export function AIAssistantChat() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
-      <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto px-4 py-6 md:px-8">
+      <div className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-3 py-5 sm:px-5 md:px-8">
         {messages.map((message) => {
-          const isUser = message.role === 'user';
+          const isUser = message.role === "user";
           const Icon = isUser ? User : Bot;
 
           return (
@@ -85,20 +109,31 @@ export function AIAssistantChat() {
               )}
             >
               {!isUser && (
-                <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <div className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
                   <Icon className="size-4" />
                 </div>
               )}
 
               <div
                 className={cn(
-                  'max-w-[min(760px,85vw)] whitespace-pre-wrap rounded-lg border px-4 py-3 text-sm leading-6 shadow-sm',
+                  "max-w-[min(760px,82vw)] whitespace-pre-wrap rounded-2xl border px-4 py-3 text-sm leading-6 shadow-sm",
                   isUser
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-card text-card-foreground',
+                    ? "rounded-br-md border-primary bg-primary text-primary-foreground"
+                    : "rounded-bl-md border-border bg-card text-card-foreground",
                 )}
               >
                 {message.text}
+                <div
+                  className={cn(
+                    "mt-2 text-[11px]",
+                    isUser ? "text-primary-foreground/70" : "text-muted-foreground",
+                  )}
+                >
+                  {message.createdAt.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
                 {message.actionExecuted && (
                   <div className="mt-3 flex items-center gap-2 border-t pt-3 text-xs opacity-80">
                     <Sparkles className="size-3.5" />
@@ -108,7 +143,7 @@ export function AIAssistantChat() {
               </div>
 
               {isUser && (
-                <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-md border bg-card">
+                <div className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-card-foreground">
                   <Icon className="size-4" />
                 </div>
               )}
@@ -117,25 +152,44 @@ export function AIAssistantChat() {
         })}
 
         {loading && (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Thinking...
+          <div className="flex items-center gap-3 pl-12 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2">
+              <Loader2 className="size-4 animate-spin" />
+              Thinking...
+            </div>
           </div>
         )}
+        <div ref={endRef} />
       </div>
 
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="border-t bg-card/50 px-4 py-4 md:px-8"
+        className="border-t border-border bg-card/80 px-3 py-4 backdrop-blur md:px-8"
       >
         {error && (
-          <p className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mb-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
             {error.message}
           </p>
         )}
 
-        <div className="flex gap-2">
+        {messages.length === 1 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {QUICK_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => sendUserMessage(prompt)}
+                disabled={loading}
+                className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/50 hover:text-foreground disabled:opacity-50"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-end gap-2">
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -146,20 +200,28 @@ export function AIAssistantChat() {
               }
             }}
             placeholder="Message the FlowOS assistant..."
-            className="min-h-11 flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="min-h-11 flex-1 resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             rows={1}
           />
-          <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+          <Button
+            type="submit"
+            size="icon"
+            className="size-11 shrink-0 rounded-full"
+            disabled={loading || !input.trim()}
+          >
             <Send className="size-4" />
             <span className="sr-only">Send</span>
           </Button>
           <Button
             type="button"
             variant="outline"
+            size="icon"
+            className="size-11 shrink-0 rounded-full"
             onClick={handleReset}
             disabled={loading}
           >
-            Reset
+            <RotateCcw className="size-4" />
+            <span className="sr-only">Reset conversation</span>
           </Button>
         </div>
       </form>

@@ -1,18 +1,19 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
 export interface LeaveRequest {
   id: string;
-  type: 'SICK' | 'VACATION' | 'PERSONAL' | 'OTHER';
+  type: "ANNUAL" | "SICK" | "PERSONAL";
   startDate: string;
   endDate: string;
   reason: string;
-  status: 'PENDING' | 'APPROVED' | 'DENIED';
+  status: "PENDING" | "APPROVED" | "REJECTED";
   doctorsNoteDataUrl?: string;
   doctorsNoteName?: string;
+  managerNote?: string | null;
   createdAt: string;
-  decidedAt?: string;
+  reviewedAt?: string | null;
   user?: { name?: string; email?: string };
-  approvedByUser?: { name?: string };
+  reviewer?: { name?: string; email?: string };
 }
 
 export interface UseLeaveRequestsOptions {
@@ -32,12 +33,12 @@ export function useLeaveRequests(options?: UseLeaveRequestsOptions) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/leave/submit');
-      if (!response.ok) throw new Error('Failed to fetch leave requests');
+      const response = await fetch("/api/leave/submit");
+      if (!response.ok) throw new Error("Failed to fetch leave requests");
       const data = await response.json();
       setLeaveRequests(data);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
+      const error = err instanceof Error ? err : new Error("Unknown error");
       setError(error);
       options?.onError?.(error);
     } finally {
@@ -57,30 +58,30 @@ export function useLeaveRequests(options?: UseLeaveRequestsOptions) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/leave/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/leave/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             type,
             startDate,
             endDate,
             reason,
             doctorsNoteDataUrl,
-            doctorsNoteName
-          })
+            doctorsNoteName,
+          }),
         });
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || 'Failed to submit request');
+          throw new Error(data.error || "Failed to submit request");
         }
 
         const newRequest = await response.json();
         setLeaveRequests((prev) => [newRequest, ...prev]);
-        options?.onSuccess?.('Leave request submitted successfully');
+        options?.onSuccess?.("Leave request submitted successfully");
         return newRequest;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
+        const error = err instanceof Error ? err : new Error("Unknown error");
         setError(error);
         options?.onError?.(error);
         throw error;
@@ -93,20 +94,20 @@ export function useLeaveRequests(options?: UseLeaveRequestsOptions) {
 
   const polishReason = useCallback(async (rawText: string) => {
     try {
-      const response = await fetch('/api/leave/polish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: rawText })
+      const response = await fetch("/api/leave/polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: rawText }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to polish reason');
+        throw new Error("Failed to polish reason");
       }
 
       const data = await response.json();
       return data.polished;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
+      const error = err instanceof Error ? err : new Error("Unknown error");
       throw error;
     }
   }, []);
@@ -133,12 +134,12 @@ export function usePendingLeaveRequests(options?: UseLeaveRequestsOptions) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/leave/decide');
-      if (!response.ok) throw new Error('Failed to fetch pending requests');
+      const response = await fetch("/api/leave/decide");
+      if (!response.ok) throw new Error("Failed to fetch pending requests");
       const data = await response.json();
       setPendingRequests(data);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
+      const error = err instanceof Error ? err : new Error("Unknown error");
       setError(error);
       options?.onError?.(error);
     } finally {
@@ -147,29 +148,29 @@ export function usePendingLeaveRequests(options?: UseLeaveRequestsOptions) {
   }, [options]);
 
   const decideRequest = useCallback(
-    async (leaveRequestId: string, status: 'APPROVED' | 'DENIED') => {
+    async (leaveRequestId: string, status: "APPROVED" | "REJECTED") => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/leave/decide', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leaveRequestId, status })
+        const response = await fetch("/api/leave/decide", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leaveRequestId, status }),
         });
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || 'Failed to decide request');
+          throw new Error(data.error || "Failed to decide request");
         }
 
         setPendingRequests((prev) =>
           prev.filter((req) => req.id !== leaveRequestId)
         );
         options?.onSuccess?.(
-          `Leave request ${status.toLowerCase()} successfully`
+          `Leave request ${status.toLowerCase()} successfully`,
         );
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
+        const error = err instanceof Error ? err : new Error("Unknown error");
         setError(error);
         options?.onError?.(error);
         throw error;
@@ -185,6 +186,6 @@ export function usePendingLeaveRequests(options?: UseLeaveRequestsOptions) {
     loading,
     error,
     fetchPendingRequests,
-    decideRequest
+    decideRequest,
   };
 }

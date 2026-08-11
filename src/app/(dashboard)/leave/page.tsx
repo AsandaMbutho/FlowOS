@@ -8,7 +8,7 @@ import { LeaveRequestsReview } from "@/components/leave/leave-requests-review";
 export default function LeavePage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const canReview = role === "ADMIN" || role === "MANAGER";
+  const canReview = role === "MANAGER";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">

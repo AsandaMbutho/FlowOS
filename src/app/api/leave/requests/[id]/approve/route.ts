@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -7,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -37,6 +38,13 @@ export async function PATCH(
       );
     }
 
+    if (user.role !== "MANAGER") {
+      return NextResponse.json(
+        { error: "Forbidden: Only supervisors can review leave requests" },
+        { status: 403 },
+      );
+    }
+
     // Next.js 16 requires params to be awaited
     const { id } = await params;
 
@@ -51,9 +59,6 @@ export async function PATCH(
         { status: 404 },
       );
     }
-
-    // TODO: Check if user is authorized (manager or admin)
-    // For now, allow any authenticated user
 
     const updated = await prisma.leaveRequest.update({
       where: { id },

@@ -35,36 +35,39 @@ enum NotifType {
   MENTION
 }
 
-// enum LeaveType {
-//   SICK
-//   VACATION
-//   PERSONAL
-//   OTHER
-// }
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+}
 
-// enum LeaveStatus {
-//   PENDING
-//   APPROVED
-//   DENIED
-// }
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  name            String?
-  avatar          String?
-  password        String?
-  role            Role             @default(USER)
-  workflows       Workflow[]       @relation("UserWorkflows")
-  assignedTasks   Task[]           @relation("UserTasks")
-  activities      Activity[]       @relation("UserActivities")
-  comments        Comment[]        @relation("CommentAuthor")
-  mentionedIn     CommentMention[]
-  documents       Document[]
-  // leaveRequests   LeaveRequest[]    @relation("UserLeaveRequests")
-  // leaveDecisions  LeaveRequest[]    @relation("LeaveApprovedBy")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  avatar   String?
+  password String?
+  role     Role    @default(USER)
+
+  workflows     Workflow[]       @relation("UserWorkflows")
+  assignedTasks Task[]           @relation("UserTasks")
+  activities    Activity[]       @relation("UserActivities")
+  comments      Comment[]        @relation("CommentAuthor")
+  mentionedIn   CommentMention[]
+  documents     Document[]
+
+  leaveRequests  LeaveRequest[] @relation("UserLeaveRequests")
+  leaveDecisions LeaveRequest[] @relation("LeaveApprovedBy")
+  leaveBalance   LeaveBalance?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Workflow {
@@ -87,7 +90,7 @@ model Workflow {
   documents   Document[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  
+
   stageHistory WorkflowStageHistory[]
 }
 
@@ -102,7 +105,7 @@ model File {
   workflow     Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   uploadedBy   String?
   createdAt    DateTime @default(now())
-  
+
   @@index([workflowId])
 }
 
@@ -131,17 +134,17 @@ model Activity {
 }
 
 model Notification {
-  id           String    @id @default(cuid())
-  type         NotifType
-  title        String
-  message      String
-  read         Boolean   @default(false)
-  userId       String?
-  workflowId   String?
-  createdAt    DateTime  @default(now())
-  emailSent    Boolean   @default(false)
-  emailSentAt  DateTime?
-  emailError   String?
+  id          String    @id @default(cuid())
+  type        NotifType
+  title       String
+  message     String
+  read        Boolean   @default(false)
+  userId      String?
+  workflowId  String?
+  createdAt   DateTime  @default(now())
+  emailSent   Boolean   @default(false)
+  emailSentAt DateTime?
+  emailError  String?
 }
 
 model Comment {
@@ -167,67 +170,81 @@ model CommentMention {
 }
 
 model WorkflowStageHistory {
-  id          String   @id @default(cuid())
-  workflowId  String
-  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  stage       String
-  enteredAt   DateTime @default(now())
-  exitedAt    DateTime?
-  
+  id         String    @id @default(cuid())
+  workflowId String
+  workflow   Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stage      String
+  enteredAt  DateTime  @default(now())
+  exitedAt   DateTime?
+
   @@index([workflowId])
   @@index([stage])
   @@index([enteredAt])
 }
 
 model Document {
-  id          String    @id @default(cuid())
-  name        String
-  fileUrl     String
-  fileType    String    @default("Other")
-  fileSize    String    @default("0 KB")
-  project     String
-  workflowId  String?
-  workflow    Workflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
-  uploadedBy  String?
-  user        User?     @relation(fields: [uploadedBy], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  name       String
+  fileUrl    String
+  fileType   String    @default("Other")
+  fileSize   String    @default("0 KB")
+  project    String
+  workflowId String?
+  workflow   Workflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  uploadedBy String?
+  user       User?     @relation(fields: [uploadedBy], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
-// Leave Request model - COMMENTED OUT
-// model LeaveRequest {
-//   id                 String       @id @default(cuid())
-//   userId             String
-//   user               User         @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
-//   type               LeaveType    @default(SICK)
-//   startDate          DateTime
-//   endDate            DateTime
-//   reason             String       @db.Text
-//   status             LeaveStatus  @default(PENDING)
-//   doctorsNoteDataUrl String?      @db.Text
-//   doctorsNoteName    String?      
-//   createdAt          DateTime     @default(now())
-//   decidedAt          DateTime?
-//   decidedBy          String?
-//   approvedByUser     User?        @relation("LeaveApprovedBy", fields: [decidedBy], references: [id])
-//   
-//   @@index([userId])
-//   @@index([status])
-//   @@index([startDate])
-// }
+model LeaveRequest {
+  id String @id @default(cuid())
 
-// Leave Balance model - COMMENTED OUT
-// model LeaveBalance {
-//   id          String   @id @default(cuid())
-//   userId      String   @unique
-//   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-//   annualEntitlement  Float @default(20)
-//   annualUsed         Float @default(0)
-//   annualCarryOver    Float @default(0)
-//   sickEntitlement    Float @default(10)
-//   sickUsed           Float @default(0)
-//   sickCarryOver      Float @default(0)
-//   personalEntitlement Float @default(3)
-//   personalUsed        Float @default(0)
-//   updatedAt DateTime @updatedAt
-// }
+  userId String
+  user   User   @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  type      LeaveType   @default(SICK)
+  startDate DateTime
+  endDate   DateTime
+  reason    String      @db.Text
+  status    LeaveStatus @default(PENDING)
+
+  isHalfDay   Boolean @default(false)
+  halfDayType String?
+
+  doctorsNoteDataUrl String? @db.Text
+  doctorsNoteName    String?
+
+  managerNote String? @db.Text
+
+  reviewerId String?
+  reviewer   User?     @relation("LeaveApprovedBy", fields: [reviewerId], references: [id])
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model LeaveBalance {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  annualEntitlement Float @default(20)
+  annualUsed        Float @default(0)
+  annualCarryOver   Float @default(0)
+
+  sickEntitlement Float @default(10)
+  sickUsed        Float @default(0)
+  sickCarryOver   Float @default(0)
+
+  personalEntitlement Float @default(3)
+  personalUsed        Float @default(0)
+
+  updatedAt DateTime @updatedAt
+}

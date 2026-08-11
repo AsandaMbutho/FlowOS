@@ -2,128 +2,79 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 
-// GET single request
-export async function GET(
+export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession();
+
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const request = await prisma.leaveRequest.findUnique({
-      where: { id: params.id },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    if (!request) {
-      return NextResponse.json({ error: "Request not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(request);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch request" },
-      { status: 500 },
-    );
-  }
-}
-
-// PUT - Update request (only if pending)
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const body = await req.json();
-    const { type, startDate, endDate, reason, isHalfDay, halfDayType } = body;
+    const { status, managerNote } = body;
 
-    const request = await prisma.leaveRequest.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!request) {
-      return NextResponse.json({ error: "Request not found" }, { status: 404 });
-    }
-
-    if (request.status !== "PENDING") {
+    if (!status || !["APPROVED", "REJECTED"].includes(status)) {
       return NextResponse.json(
-        { error: "Only pending requests can be updated" },
+        { error: "Invalid status. Must be APPROVED or REJECTED" },
         { status: 400 },
       );
     }
 
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 },
+      );
+    }
+
+    // Next.js 16: params is a Promise
+    const { id } = await params;
+
+    const request = await prisma.leaveRequest.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+
+    if (!request) {
+      return NextResponse.json(
+        { error: "Request not found" },
+        { status: 404 },
+      );
+    }
+
+    // TODO: Check if user is authorized (manager or admin)
+    // For now, allow any authenticated user
+
     const updated = await prisma.leaveRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        type,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        reason,
-        isHalfDay,
-        halfDayType,
+        status,
+        managerNote,
+        reviewerId: user.id,
+        reviewedAt: new Date(),
       },
     });
 
+    // TODO: Send email notification
+
     return NextResponse.json(updated);
   } catch (error) {
+    console.error("Error approving request:", error);
+
     return NextResponse.json(
-      { error: "Failed to update request" },
+      { error: "Failed to approve request" },
       { status: 500 },
     );
   }
 }
 
-// DELETE - Cancel request
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const request = await prisma.leaveRequest.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!request) {
-      return NextResponse.json({ error: "Request not found" }, { status: 404 });
-    }
-
-    if (request.status === "APPROVED") {
-      return NextResponse.json(
-        { error: "Approved requests cannot be cancelled" },
-        { status: 400 },
-      );
-    }
-
-    await prisma.leaveRequest.update({
-      where: { id: params.id },
-      data: { status: "CANCELLED" },
-    });
-
-    return NextResponse.json({ message: "Request cancelled successfully" });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to cancel request" },
-      { status: 500 },
-    );
-  }
-}

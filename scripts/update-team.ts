@@ -8,7 +8,7 @@ const TEAM_ROSTER = [
   { name: "Sizwe", email: "sizweschaba723@gmail.com" },
   { name: "Themba", email: "netshifirathemba0@gmail.com" },
   { name: "Matlhodi", email: "moilamatlhodi707@gmail.com" },
-  { name: "Lutendo", email: "lupreshie@gmail.com" },
+  { name: "Lutendo", email: "lupreshire@gmail.com" },
   { name: "Ridwaan", email: "sridwaan0@gmail.com" },
 ];
 

@@ -8,6 +8,12 @@ import {
 } from '@/lib/leave-service';
 import { LeaveType } from '@prisma/client';
 
+const LEAVE_TYPES = ['ANNUAL', 'SICK', 'PERSONAL'] as const;
+
+function isLeaveType(value: unknown): value is LeaveType {
+  return typeof value === 'string' && LEAVE_TYPES.includes(value as LeaveType);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,7 +32,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { type, startDate, endDate, reason, doctorsNoteDataUrl, doctorsNoteName } = body;
+    const {
+      type,
+      startDate,
+      endDate,
+      reason,
+      doctorsNoteDataUrl,
+      doctorsNoteName,
+      isHalfDay,
+      halfDayType,
+    } = body;
 
     if (!type || !startDate || !endDate || !reason) {
       return NextResponse.json(
@@ -35,13 +50,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!isLeaveType(type)) {
+      return NextResponse.json(
+        { error: 'Invalid leave type' },
+        { status: 400 }
+      );
+    }
+
+    const parsedStartDate = new Date(startDate);
+    const parsedEndDate = new Date(endDate);
+
+    if (Number.isNaN(parsedStartDate.getTime()) || Number.isNaN(parsedEndDate.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid start or end date' },
+        { status: 400 }
+      );
+    }
+
+    if (parsedStartDate > parsedEndDate) {
+      return NextResponse.json(
+        { error: 'End date must be after start date' },
+        { status: 400 }
+      );
+    }
+
     const input: SubmitLeaveRequestInput = {
-      type: type as LeaveType,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      reason,
+      type,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
+      reason: String(reason).trim(),
       doctorsNoteDataUrl,
-      doctorsNoteName
+      doctorsNoteName,
+      isHalfDay: Boolean(isHalfDay),
+      halfDayType,
     };
 
     const leaveRequest = await submitLeaveRequest(user.id, input);
@@ -50,7 +91,12 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error submitting leave request:', error);
     return NextResponse.json(
-      { error: 'Failed to submit leave request' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to submit leave request',
+      },
       { status: 500 }
     );
   }

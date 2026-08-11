@@ -769,7 +769,7 @@ export default function SettingsPage() {
                 {
                   name: "Lutendo",
                   role: "USER",
-                  email: "lupreshie@gmail.com",
+                  email: "lupreshire@gmail.com",
                   color: "from-indigo-500 to-blue-500",
                 },
               ].map((member) => (

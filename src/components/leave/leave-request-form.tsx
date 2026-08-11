@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useLeaveRequests } from '@/lib/hooks/use-leave-requests';
-import { compressImageFile } from '@/lib/leave-service';
+import { compressImageFile } from '@/lib/image-compression';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';

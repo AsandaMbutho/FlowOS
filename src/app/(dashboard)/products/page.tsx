@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Package, ArrowRight, Workflow, FileText } from "lucide-react";
+import { ArrowRight, ExternalLink, Workflow, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const products = [
@@ -19,6 +19,7 @@ const products = [
     description: "Cybersecurity platform integration and protection",
     icon: "🛡️",
     color: "from-red-500 to-orange-500",
+    websiteUrl: "https://cyber-safe-africa.vercel.app/",
   },
   {
     id: "elearning",
@@ -26,6 +27,8 @@ const products = [
     description: "Educational content delivery system",
     icon: "📚",
     color: "from-blue-500 to-cyan-500",
+    websiteUrl:
+      "https://media-on-africa-learning-hub.github.io/Media-On-Africa-Learning-Hub/index.html",
   },
   {
     id: "crm",
@@ -118,6 +121,11 @@ export default function ProductsPage() {
                   View Product{" "}
                   <ArrowRight className="w-4 h-4 ml-1 group-hover:ml-2 transition-all" />
                 </div>
+                {product.websiteUrl && (
+                  <div className="flex items-center text-xs font-medium text-muted-foreground mt-2">
+                    Product site <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                  </div>
+                )}
               </Card>
             </Link>
           );

@@ -53,10 +53,22 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const author = await db.user.findUnique({
-      where: { email: session.user.email },
+    const author = await db.user.findFirst({
+      where: {
+        OR: [
+          ...(session.user.id ? [{ id: session.user.id }] : []),
+          { email: session.user.email },
+        ],
+      },
       select: { id: true, name: true },
     });
+
+    if (!author) {
+      return NextResponse.json(
+        { error: "Signed-in user was not found" },
+        { status: 401 },
+      );
+    }
 
     // Resolve mentions from the saved comment body rather than trusting a
     // client-provided list. This also supports names typed without using the
@@ -87,7 +99,7 @@ export async function POST(
       data: {
         body: body.trim(),
         workflowId: id,
-        authorId: author?.id ?? null,
+        authorId: author.id,
         mentions: {
           create: mentionedUsers.map((u) => ({ userId: u.id })),
         },
@@ -103,13 +115,13 @@ export async function POST(
     // Create in-app notifications AND send emails for mentions
     for (const user of mentionedUsers) {
       // Do not email a user when they mention themselves.
-      if (user.id === author?.id) continue;
+      if (user.id === author.id) continue;
 
       // Create in-app notification
       await createNotification({
         type: "MENTION",
         title: "You were mentioned",
-        message: `${author?.name ?? "Someone"} mentioned you in "${workflow?.title}"`,
+        message: `${author.name ?? "Someone"} mentioned you in "${workflow?.title}"`,
         userId: user.id,
         workflowId: id,
       });
@@ -118,7 +130,7 @@ export async function POST(
       if (user.email) {
         const emailResult = await sendMentionEmail(
           user.email,
-          author?.name ?? "Someone",
+          author.name ?? "Someone",
           workflow?.title ?? "a workflow",
           body.trim(),
           id,

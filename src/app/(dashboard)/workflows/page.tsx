@@ -88,8 +88,8 @@ const STATUS_CFG: Record<Status, { bg: string; text: string }> = {
     text: "text-green-700 dark:text-green-300",
   },
   "To Do": {
-    bg: "bg-gray-100 dark:bg-muted/30",
-    text: "text-gray-600 dark:text-muted-foreground",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
   },
 };
 
@@ -1141,8 +1141,8 @@ function WorkflowsContent() {
         {[
           {
             icon: Users,
-            color: "bg-gray-100 dark:bg-muted/30",
-            iconColor: "text-gray-500 dark:text-muted-foreground",
+            color: "bg-muted",
+            iconColor: "text-muted-foreground",
             label: "Total",
             val: total,
           },

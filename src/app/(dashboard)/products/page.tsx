@@ -92,7 +92,7 @@ export default function ProductsPage() {
           const stat = stats[product.id] || { workflows: 0, documents: 0 };
           return (
             <Link key={product.id} href={`/products/${product.id}`}>
-              <Card className="p-6 hover:shadow-lg transition-all duration-200 border border-gray-100 hover:border-gray-200 group cursor-pointer h-full">
+              <Card className="p-6 hover:shadow-lg transition-all duration-200 border border-border hover:border-accent/40 group cursor-pointer h-full">
                 <div
                   className={`w-12 h-12 rounded-xl bg-gradient-to-br ${product.color} flex items-center justify-center text-2xl mb-4`}
                 >
@@ -101,10 +101,10 @@ export default function ProductsPage() {
                 <h3 className="font-semibold text-lg mb-2 group-hover:text-[#10b981] transition-colors">
                   {product.name}
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   {product.description}
                 </p>
-                <div className="flex items-center gap-4 text-xs text-gray-400">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Workflow className="w-3.5 h-3.5" /> {stat.workflows}{" "}
                     workflows

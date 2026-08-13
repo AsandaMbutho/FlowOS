@@ -98,8 +98,8 @@ function StatCard({
       </div>
       <div className="min-w-0">
         <p className="text-xl font-bold text-foreground leading-none">{value}</p>
-        <p className="text-xs text-gray-500 mt-0.5 truncate">{label}</p>
-        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">{label}</p>
+        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
       </div>
     </div>
   );
@@ -118,7 +118,7 @@ function ChartCard({
     <div className="bg-card rounded-2xl border p-4 md:p-6">
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
       {children}
     </div>
@@ -155,7 +155,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Analytics</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Real-time insights across all workflows
           </p>
         </div>
@@ -335,7 +335,7 @@ export default function AnalyticsPage() {
                           className="w-2.5 h-2.5 rounded-full shrink-0"
                           style={{ background: s.color }}
                         />
-                        <span className="text-xs text-gray-600">{s.label}</span>
+                        <span className="text-xs text-muted-foreground">{s.label}</span>
                       </div>
                       <span className="text-xs font-semibold text-foreground">
                         {s.value}
@@ -381,7 +381,7 @@ export default function AnalyticsPage() {
                             className="w-2.5 h-2.5 rounded-full"
                             style={{ background: p.color }}
                           />
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-muted-foreground">
                             {p.label}
                           </span>
                         </div>
@@ -438,7 +438,7 @@ export default function AnalyticsPage() {
                           className="w-2.5 h-2.5 rounded-full shrink-0"
                           style={{ background: o.color }}
                         />
-                        <span className="text-xs text-gray-600">{o.label}</span>
+                        <span className="text-xs text-muted-foreground">{o.label}</span>
                       </div>
                       <span className="text-xs font-semibold text-foreground">
                         {o.value}
@@ -509,7 +509,7 @@ export default function AnalyticsPage() {
               subtitle="Who's getting things done"
             >
               {data.tasksByMember.length === 0 ? (
-                <div className="flex items-center justify-center h-48 text-sm text-gray-400">
+                <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
                   No completed tasks yet
                 </div>
               ) : (

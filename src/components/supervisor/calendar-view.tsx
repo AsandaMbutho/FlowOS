@@ -163,7 +163,7 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
   return (
     <div className="h-[550px] w-full min-w-0">
       {/* Custom Toolbar */}
-      <div className="flex flex-col gap-3 mb-4 p-3 bg-gray-50 rounded-lg border sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 mb-4 p-3 bg-muted rounded-lg border sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

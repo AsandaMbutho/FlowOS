@@ -161,7 +161,7 @@ export default function DocumentsPage() {
           </p>
         </div>
         <Button
-          className="bg-[#0f1f3d] hover:bg-[#10b981] text-sm"
+          className="bg-[#0f1f3d] text-white hover:bg-[#10b981] hover:text-white text-sm"
           onClick={() => setShowUploadModal(true)}
         >
           <Plus className="w-4 h-4 mr-1.5" /> Upload Document
@@ -170,7 +170,7 @@ export default function DocumentsPage() {
 
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search documents..."
             className="pl-9"
@@ -197,8 +197,8 @@ export default function DocumentsPage() {
 
       {filtered.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No documents found</p>
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">No documents found</p>
           <Button
             variant="outline"
             className="mt-3"
@@ -214,7 +214,7 @@ export default function DocumentsPage() {
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-gray-500" />
+                    <FileText className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm truncate max-w-[150px]">
@@ -226,7 +226,7 @@ export default function DocumentsPage() {
                       >
                         {doc.fileType}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {doc.fileSize}
                       </span>
                     </div>
@@ -234,29 +234,29 @@ export default function DocumentsPage() {
                 </div>
                 <button
                   onClick={() => handleDelete(doc.id)}
-                  className="text-gray-400 hover:text-red-500 transition"
+                  className="text-muted-foreground hover:text-red-500 transition"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
                 <span
                   className={`text-xs px-2 py-0.5 rounded ${projectColors[doc.project] || "bg-muted"}`}
                 >
                   {doc.project.charAt(0).toUpperCase() + doc.project.slice(1)}
                 </span>
                 {doc.workflow && (
-                  <span className="text-xs text-gray-400 truncate max-w-[80px]">
+                  <span className="text-xs text-muted-foreground truncate max-w-[80px]">
                     {doc.workflow.title}
                   </span>
                 )}
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   {doc.user?.name || "Unknown"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
                 <button
                   onClick={() => handleView(doc.fileUrl)}
                   className="text-xs text-blue-500 hover:underline flex items-center gap-1"
@@ -265,7 +265,7 @@ export default function DocumentsPage() {
                 </button>
                 <button
                   onClick={() => handleDownload(doc.fileUrl, doc.name)}
-                  className="text-xs text-gray-500 hover:underline flex items-center gap-1"
+                  className="text-xs text-muted-foreground hover:underline flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" /> Download
                 </button>
@@ -303,7 +303,7 @@ export default function DocumentsPage() {
                   className="w-full text-sm border rounded-lg p-2"
                 />
                 {selectedFile && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {selectedFile.name}
                   </p>
                 )}

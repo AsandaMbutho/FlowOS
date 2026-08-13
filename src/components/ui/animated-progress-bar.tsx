@@ -28,7 +28,7 @@ export function AnimatedProgressBar({
   return (
     <div className="w-full">
       {showLabel && (
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div className="flex justify-between text-xs text-muted-foreground mb-1">
           <span>Progress</span>
           <motion.span
             key={progress}
@@ -42,7 +42,7 @@ export function AnimatedProgressBar({
         </div>
       )}
       <div
-        className={`w-full bg-gray-200 rounded-full overflow-hidden ${heights[height]}`}
+        className={`w-full bg-muted rounded-full overflow-hidden ${heights[height]}`}
       >
         <motion.div
           className={`h-full rounded-full ${getColor()}`}

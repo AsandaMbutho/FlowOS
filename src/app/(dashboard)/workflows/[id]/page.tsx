@@ -566,7 +566,7 @@ export default function WorkflowDetailPage() {
   const mentionSuggestions =
     mentionQuery !== null
       ? TEAM_MEMBERS.filter(
-          (m) => m.toLowerCase().startsWith(mentionQuery) && m !== "Asanda",
+          (m) => m.toLowerCase().startsWith(mentionQuery),
         )
       : [];
 
@@ -726,7 +726,7 @@ export default function WorkflowDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
-      <div className="bg-card border-border border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-card border-border border-b px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/workflows">
             <Button
@@ -763,7 +763,7 @@ export default function WorkflowDetailPage() {
           </Button>
           <Button
             size="sm"
-            className="bg-[#0f1f3d] hover:bg-[#10b981] gap-1.5"
+            className="bg-[#0f1f3d] text-white hover:bg-[#10b981] hover:text-white gap-1.5"
             onClick={handleSave}
             disabled={!dirty || saving}
           >
@@ -1078,7 +1078,7 @@ export default function WorkflowDetailPage() {
                 id="file-upload"
                 type="file"
                 onChange={handleFileInputChange}
-                className="flex-1 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#0f1f3d] file:text-white hover:file:bg-[#10b981]"
+                className="flex-1 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#0f1f3d] file:text-white hover:file:bg-[#10b981] hover:file:text-white"
                 disabled={uploading}
               />
               <select
@@ -1095,7 +1095,7 @@ export default function WorkflowDetailPage() {
                 size="sm"
                 onClick={handleFileUpload}
                 disabled={!selectedFile || uploading}
-                className="bg-[#0f1f3d] hover:bg-[#10b981]"
+                className="bg-[#0f1f3d] text-white hover:bg-[#10b981] hover:text-white"
               >
                 {uploading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

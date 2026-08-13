@@ -45,9 +45,9 @@ const COLUMNS: {
   {
     stage: "TODO",
     label: "To Do",
-    color: "text-gray-600",
-    bg: "bg-gray-50",
-    border: "border-gray-200",
+    color: "text-muted-foreground",
+    bg: "bg-muted",
+    border: "border-border",
     dot: "bg-gray-400",
   },
   {
@@ -140,13 +140,13 @@ function KanbanCard({
     >
       {/* Drag handle hint */}
       <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-gray-300 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <GripVertical className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex-1 min-w-0">
           {/* Title */}
           <h3 className="text-sm font-semibold text-foreground leading-snug mb-1">
             {workflow.title}
           </h3>
-          <p className="text-xs text-gray-400 truncate mb-2">
+          <p className="text-xs text-muted-foreground truncate mb-2">
             {workflow.description}
           </p>
 
@@ -167,9 +167,9 @@ function KanbanCard({
 
           {/* Progress bar */}
           <div className="mb-3">
-            <div className="flex justify-between text-xs text-gray-400 mb-1">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
               <span>{workflow.team}</span>
-              <span className="font-medium text-gray-600">
+              <span className="font-medium text-muted-foreground">
                 {workflow.progress}%
               </span>
             </div>
@@ -189,12 +189,12 @@ function KanbanCard({
               >
                 {workflow.assignee.initials}
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {workflow.assignee.name}
               </span>
             </div>
             {workflow.dueDate !== "Overdue" && (
-              <span className="text-xs text-gray-400">{workflow.dueDate}</span>
+              <span className="text-xs text-muted-foreground">{workflow.dueDate}</span>
             )}
           </div>
         </div>
@@ -263,7 +263,7 @@ function KanbanColumn({
           />
         ))}
         {workflows.length === 0 && !isDragOver && (
-          <div className="flex items-center justify-center h-24 text-xs text-gray-300 border-2 border-dashed border-gray-100 rounded-xl">
+          <div className="flex items-center justify-center h-24 text-xs text-muted-foreground border-2 border-dashed border-border rounded-xl">
             Drop here
           </div>
         )}
@@ -388,7 +388,7 @@ export default function KanbanPage() {
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-bold">Kanban Board</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Drag and drop workflows to update their status
           </p>
         </div>
@@ -437,7 +437,7 @@ export default function KanbanPage() {
             >
               <span className={`text-sm font-bold ${color}`}>{val}</span>
             </div>
-            <span className="text-xs text-gray-500">{label}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { sendMentionEmail } from "@/lib/email";
 
@@ -37,7 +39,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { body, authorName, mentionedNames } = await request.json();
+    const { body } = await request.json();
 
     if (!body?.trim()) {
       return NextResponse.json(
@@ -46,14 +48,33 @@ export async function POST(
       );
     }
 
-    // Resolve author
-    const author = authorName
-      ? await db.user.findFirst({ where: { name: authorName } })
-      : null;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Resolve mentioned users
-    const mentionedUsers = mentionedNames?.length
-      ? await db.user.findMany({ where: { name: { in: mentionedNames } } })
+    const author = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, name: true },
+    });
+
+    // Resolve mentions from the saved comment body rather than trusting a
+    // client-provided list. This also supports names typed without using the
+    // suggestion menu, such as @ridwaan.
+    const mentionedNames = [
+      ...new Set(
+        [...body.matchAll(/@([\p{L}\p{N}_-]+)/gu)].map((match) => match[1]),
+      ),
+    ];
+    const mentionedUsers = mentionedNames.length
+      ? await db.user.findMany({
+          where: {
+            OR: mentionedNames.map((name) => ({
+              name: { equals: name, mode: "insensitive" },
+            })),
+          },
+          select: { id: true, name: true, email: true },
+        })
       : [];
 
     // Get workflow for notification context
@@ -81,6 +102,9 @@ export async function POST(
 
     // Create in-app notifications AND send emails for mentions
     for (const user of mentionedUsers) {
+      // Do not email a user when they mention themselves.
+      if (user.id === author?.id) continue;
+
       // Create in-app notification
       await createNotification({
         type: "MENTION",

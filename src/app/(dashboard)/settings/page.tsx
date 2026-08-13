@@ -538,7 +538,7 @@ export default function SettingsPage() {
                           ? "bg-amber-100 text-amber-700"
                           : dbUser?.role === "ADMIN"
                             ? "bg-blue-100 text-blue-700"
-                            : "bg-gray-100 text-gray-600"
+                            : "bg-muted text-muted-foreground"
                       }`}
                     >
                       <Shield className="w-3.5 h-3.5" />
@@ -796,7 +796,7 @@ export default function SettingsPage() {
                         ? "bg-amber-100 text-amber-700"
                         : member.role === "ADMIN"
                           ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-600"
+                          : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {ROLE_LABELS[member.role as DbUser["role"]]}

@@ -114,7 +114,7 @@ export function PipelineView() {
       case "BLOCKED":
         return "bg-red-100 text-red-600";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-muted text-muted-foreground";
     }
   };
 

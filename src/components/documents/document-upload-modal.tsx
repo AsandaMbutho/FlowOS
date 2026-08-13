@@ -82,15 +82,15 @@ export function DocumentUploadModal({
                   onClick={() => setProject(p.toLowerCase())}
                   className={`px-3 py-1.5 text-xs rounded-full border transition ${
                     project === p.toLowerCase()
-                      ? "bg-[#0f1f3d] text-white border-[#0f1f3d]"
-                      : "bg-card text-muted-foreground border-border hover:border-muted-foreground"
+                      ? "bg-accent text-accent-foreground border-accent"
+                      : "bg-card text-muted-foreground border-border hover:border-accent/50 hover:text-foreground"
                   }`}
                 >
                   {p}
                 </button>
               ))}
               {workflowTitle && (
-                <span className="text-xs text-gray-400 flex items-center">
+                <span className="text-xs text-muted-foreground flex items-center">
                   (Workflow: {workflowTitle})
                 </span>
               )}
@@ -99,7 +99,7 @@ export function DocumentUploadModal({
 
           <div>
             <label className="block text-sm font-medium mb-1">File</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-accent/50 transition">
               <input
                 type="file"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -107,11 +107,11 @@ export function DocumentUploadModal({
                 id="file-upload"
               />
               <label htmlFor="file-upload" className="cursor-pointer block">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">
+                <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-foreground">
                   {file ? file.name : "Click to select a file"}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   PDF, DOC, XLS, PPT up to 10MB
                 </p>
               </label>
@@ -123,7 +123,7 @@ export function DocumentUploadModal({
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-[#0f1f3d] hover:bg-[#10b981]"
+              className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={handleUpload}
               disabled={!file || !name || uploading}
             >

@@ -538,26 +538,26 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
               onClick={() => router.push("/settings")}
-              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
+              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white cursor-pointer"
             >
-              <User className="mr-2 h-4 w-4 text-[#29d3aa]" /> Profile
+              <User className="h-4 w-4 text-[#29d3aa]" /> Profile
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/settings")}
-              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
+              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white cursor-pointer"
             >
               Settings
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/team")}
-              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
+              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white cursor-pointer"
             >
               Team
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-[#ff6b6b] hover:text-white hover:bg-[#ff6b6b]/10 focus:bg-[#ff6b6b]/10 cursor-pointer"
+              className="text-[#ff6b6b] hover:text-white hover:bg-[#ff6b6b]/10 focus:bg-[#ff6b6b]/10 focus:text-white cursor-pointer"
             >
               Log out
             </DropdownMenuItem>

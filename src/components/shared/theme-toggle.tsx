@@ -40,7 +40,7 @@ export function ThemeToggle() {
           ) : theme === "light" ? (
             <Sun className="h-4 w-4 text-muted-foreground hover:text-foreground" />
           ) : (
-            <Monitor className="h-4 w-4 text-gray-400" />
+            <Monitor className="h-4 w-4 text-muted-foreground" />
           )}
           <span className="sr-only">Toggle theme</span>
         </Button>

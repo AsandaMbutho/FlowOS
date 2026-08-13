@@ -181,7 +181,7 @@ export default function TeamPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search team..."
           className="pl-9"
@@ -194,7 +194,7 @@ export default function TeamPage() {
         {filtered.map((member) => (
           <Card
             key={member.id}
-            className="p-5 hover:shadow-lg transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
+            className="p-5 hover:shadow-lg transition-all duration-200 border border-border hover:border-accent/40 group"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
@@ -206,14 +206,14 @@ export default function TeamPage() {
                 <div>
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     {member.name}
-                    <span className="text-[10px] font-medium text-gray-400 flex items-center gap-1">
+                    <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
                       {member.status}
                     </span>
                   </h3>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-sm text-gray-500">
+                    <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
                       {member.email}
                     </span>
                   </div>
@@ -221,7 +221,7 @@ export default function TeamPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
               <span
                 className={`text-xs px-3 py-1 rounded-full border font-medium flex items-center gap-1.5 ${roleBadgeColors[member.badge] || "bg-muted text-muted-foreground border-border"}`}
               >
@@ -234,7 +234,7 @@ export default function TeamPage() {
               </span>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-muted-foreground">
                   Workflow Progress
@@ -252,23 +252,23 @@ export default function TeamPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-2 bg-gray-50 rounded-lg">
+                <div className="text-center p-2 bg-muted rounded-lg">
                   <div className="text-sm font-bold text-foreground">
                     {member.workflowCount}
                   </div>
-                  <div className="text-[10px] text-gray-400">Total</div>
+                  <div className="text-[10px] text-muted-foreground">Total</div>
                 </div>
                 <div className="text-center p-2 bg-emerald-50 rounded-lg">
                   <div className="text-sm font-bold text-emerald-600">
                     {member.completedWorkflows}
                   </div>
-                  <div className="text-[10px] text-gray-400">Done</div>
+                  <div className="text-[10px] text-muted-foreground">Done</div>
                 </div>
                 <div className="text-center p-2 bg-amber-50 rounded-lg">
                   <div className="text-sm font-bold text-amber-600">
                     {member.workflowCount - member.completedWorkflows}
                   </div>
-                  <div className="text-[10px] text-gray-400">Remaining</div>
+                  <div className="text-[10px] text-muted-foreground">Remaining</div>
                 </div>
               </div>
             </div>

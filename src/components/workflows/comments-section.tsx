@@ -157,7 +157,7 @@ export function CommentsSection({
       {/* Comments list */}
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {comments.length === 0 ? (
-          <p className="text-gray-400 text-sm py-4 text-center">
+          <p className="text-muted-foreground text-sm py-4 text-center">
             No comments yet. Be the first to comment!
           </p>
         ) : (
@@ -167,7 +167,7 @@ export function CommentsSection({
             const isDeleting = deletingId === comment.id;
 
             return (
-              <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
+              <div key={comment.id} className="bg-muted rounded-lg p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center">
@@ -176,7 +176,7 @@ export function CommentsSection({
                     <span className="font-medium text-sm">
                       {comment.author?.name || "Unknown"}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-muted-foreground">
                       {formatTime(comment.createdAt)}
                     </span>
                   </div>
@@ -186,7 +186,7 @@ export function CommentsSection({
                     <div className="flex gap-1">
                       <button
                         onClick={() => startEditing(comment)}
-                        className="text-gray-400 hover:text-blue-500 transition-colors"
+                        className="text-muted-foreground hover:text-blue-500 transition-colors"
                         title="Edit comment"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -194,7 +194,7 @@ export function CommentsSection({
                       <button
                         onClick={() => handleDelete(comment.id)}
                         disabled={isDeleting}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        className="text-muted-foreground hover:text-red-500 transition-colors"
                         title="Delete comment"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

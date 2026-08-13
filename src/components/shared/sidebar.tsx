@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -226,6 +227,7 @@ const DEFAULT_TABS: Tab[] = [
     iconName: "CalendarCheck",
     href: "/leave",
   },
+  { id: "meetings", label: "Meetings", iconName: "CalendarCheck", href: "/meetings" },
   { id: "team", label: "Team", iconName: "UserCircle", href: "/team" },
   {
     id: "analytics",
@@ -243,8 +245,31 @@ const DEFAULT_TABS: Tab[] = [
 
 const TABS_STORAGE_KEY = "flowos-tabs-state";
 
+// Human-friendly labels for the role stored on the user record.
+const ROLE_LABELS: Record<string, string> = {
+  MANAGER: "Supervisor",
+  ADMIN: "Administrator",
+  USER: "Team Member",
+};
+
 export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const displayName = session?.user?.name || session?.user?.email || "Guest";
+  const displayRole = session?.user?.role
+    ? (ROLE_LABELS[session.user.role] ?? session.user.role)
+    : "";
+  const initial = displayName.trim().charAt(0).toUpperCase() || "?";
+
+  const handleLogOut = () => {
+    signOut({ redirect: false }).then(() => {
+      router.push("/login");
+      router.refresh();
+    });
+  };
+
   const [tabs, setTabs] = useState<Tab[]>(DEFAULT_TABS);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -563,16 +588,21 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
       {/* Footer */}
       <div className="px-4 pt-4 border-t border-white/5 mt-auto">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#29d3aa] to-[#7c6cff] flex items-center justify-center text-white text-xs font-semibold">
-            A
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#29d3aa] to-[#7c6cff] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+            {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-white font-medium truncate">Asanda</p>
-            <p className="text-xs text-white/40 truncate">Team Member</p>
+            <p className="text-sm text-white font-medium truncate">
+              {displayName}
+            </p>
+            <p className="text-xs text-white/40 truncate">{displayRole}</p>
           </div>
           <div className="w-2 h-2 rounded-full bg-[#29d3aa] flex-shrink-0" />
         </div>
-        <button className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60 mt-1">
+        <button
+          onClick={handleLogOut}
+          className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60 mt-1"
+        >
           <LogOut className="w-4 h-4" />
           <span className="text-sm">Log Out</span>
         </button>

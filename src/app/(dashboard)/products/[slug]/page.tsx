@@ -135,7 +135,7 @@ export default function ProductDetailPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       {/* Back button */}
-      <Link href="/products">
+      <Link href="/products" className="inline-flex w-fit">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="w-4 h-4" /> Back to Products
         </button>

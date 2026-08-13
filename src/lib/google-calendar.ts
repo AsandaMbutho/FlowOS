@@ -7,6 +7,15 @@ type CalendarEvent = {
   conferenceData?: { entryPoints?: Array<{ entryPointType?: string; uri?: string }> };
 };
 
+export type UpcomingCalendarEvent = {
+  id: string;
+  summary: string;
+  start: string;
+  end: string | null;
+  htmlLink: string | null;
+  location: string | null;
+};
+
 async function accessToken(accountId: string) {
   const account = await db.googleAccount.findUniqueOrThrow({ where: { id: accountId } });
   if (!account.expiresAt || account.expiresAt.getTime() > Date.now() + 60_000) return account;
@@ -91,6 +100,40 @@ export async function updateCalendarMeeting(accountId: string, eventId: string, 
 export async function cancelCalendarMeeting(accountId: string, eventId: string) {
   const account = await db.googleAccount.findUniqueOrThrow({ where: { id: accountId } });
   await googleFetch(accountId, `/calendars/${encodeURIComponent(account.calendarId)}/events/${encodeURIComponent(eventId)}?sendUpdates=all`, { method: "DELETE" });
+}
+
+export async function listUpcomingCalendarEvents(accountId: string, maxResults = 10) {
+  const account = await db.googleAccount.findUniqueOrThrow({ where: { id: accountId } });
+  const query = new URLSearchParams({
+    timeMin: new Date().toISOString(),
+    maxResults: String(maxResults),
+    singleEvents: "true",
+    orderBy: "startTime",
+  });
+  const data = (await googleFetch(
+    accountId,
+    `/calendars/${encodeURIComponent(account.calendarId)}/events?${query}`,
+  )) as {
+    items?: Array<{
+      id?: string;
+      summary?: string;
+      start?: { dateTime?: string; date?: string };
+      end?: { dateTime?: string; date?: string };
+      htmlLink?: string;
+      location?: string;
+    }>;
+  };
+
+  return (data.items ?? [])
+    .filter((event) => event.id && (event.start?.dateTime || event.start?.date))
+    .map((event) => ({
+      id: event.id!,
+      summary: event.summary || "Untitled event",
+      start: event.start!.dateTime ?? event.start!.date!,
+      end: event.end?.dateTime ?? event.end?.date ?? null,
+      htmlLink: event.htmlLink ?? null,
+      location: event.location ?? null,
+    })) satisfies UpcomingCalendarEvent[];
 }
 
 export function meetUrl(event: CalendarEvent) {

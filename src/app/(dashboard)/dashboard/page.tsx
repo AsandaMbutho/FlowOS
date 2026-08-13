@@ -6,6 +6,7 @@ import { PipelineView } from "@/components/dashboard/pipeline-view";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { StatsCards } from "@/components/dashboard/stats-cards";
+import { GoogleCalendarCard } from "@/components/dashboard/google-calendar-card";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
@@ -517,6 +518,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <ActivityFeed />
+          <GoogleCalendarCard />
         </div>
       </div>
 

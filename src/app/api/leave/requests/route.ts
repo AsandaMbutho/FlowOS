@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
+import { sendLeaveRequestSubmittedNotifications } from "@/lib/email-notifications";
 
 // GET - Get user's leave requests
 export async function GET(req: NextRequest) {
@@ -117,6 +118,8 @@ export async function POST(req: NextRequest) {
         halfDayType: isHalfDay ? halfDayType : undefined,
       },
     });
+
+    await sendLeaveRequestSubmittedNotifications(request.id);
 
     return NextResponse.json(request, { status: 201 });
   } catch (error) {

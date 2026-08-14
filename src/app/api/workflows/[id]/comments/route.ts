@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { sendMentionEmail } from "@/lib/email";
+import { sendSupervisorCommentNotifications } from "@/lib/email-notifications";
+import { resolveMentionedUsers } from "@/lib/comment-mentions";
 
 // GET /api/workflows/[id]/comments
 export async function GET(
@@ -70,24 +72,7 @@ export async function POST(
       );
     }
 
-    // Resolve mentions from the saved comment body rather than trusting a
-    // client-provided list. This also supports names typed without using the
-    // suggestion menu, such as @ridwaan.
-    const mentionedNames = [
-      ...new Set(
-        [...body.matchAll(/@([\p{L}\p{N}_-]+)/gu)].map((match) => match[1]),
-      ),
-    ];
-    const mentionedUsers = mentionedNames.length
-      ? await db.user.findMany({
-          where: {
-            OR: mentionedNames.map((name) => ({
-              name: { equals: name, mode: "insensitive" },
-            })),
-          },
-          select: { id: true, name: true, email: true },
-        })
-      : [];
+    const mentionedUsers = await resolveMentionedUsers(body);
 
     // Get workflow for notification context
     const workflow = await db.workflow.findUnique({
@@ -149,6 +134,8 @@ export async function POST(
         console.log(`⚠️ No email address for user: ${user.name}`);
       }
     }
+
+    await sendSupervisorCommentNotifications(comment.id);
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

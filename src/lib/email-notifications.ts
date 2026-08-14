@@ -5,6 +5,9 @@ import {
   sendStatusChangeEmail,
   sendAssignmentEmail,
   sendTaskCompletedEmail,
+  sendSupervisorCommentUpdateEmail,
+  sendLeaveRequestSubmittedEmail,
+  sendLeaveRequestDecisionEmail,
 } from "./email";
 
 // Get user email by ID
@@ -165,6 +168,155 @@ export async function sendMentionNotifications(commentId: string) {
     return { processed: results.length, results };
   } catch (error) {
     console.error("Error sending mention notifications:", error);
+    return { error };
+  }
+}
+
+// Send every workflow comment to supervisors so they get continuous updates.
+export async function sendSupervisorCommentNotifications(commentId: string) {
+  try {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        author: true,
+        workflow: true,
+      },
+    });
+
+    if (!comment) return { error: "Comment not found" };
+
+    const supervisors = await prisma.user.findMany({
+      where: {
+        role: { in: ["MANAGER", "ADMIN"] },
+        email: { not: "" },
+        id: { not: comment.authorId ?? undefined },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    const results = [];
+
+    for (const supervisor of supervisors) {
+      if (!supervisor.email) continue;
+
+      const emailResult = await sendSupervisorCommentUpdateEmail(
+        supervisor.email,
+        supervisor.name || "Supervisor",
+        comment.author?.name || "Someone",
+        comment.workflow.title,
+        comment.body,
+        comment.workflow.id,
+      );
+
+      results.push({
+        userId: supervisor.id,
+        email: supervisor.email,
+        emailSent: emailResult.success,
+        error: emailResult.error,
+      });
+    }
+
+    return { success: true, processed: results.length, results };
+  } catch (error) {
+    console.error("Error sending supervisor comment notifications:", error);
+    return { error };
+  }
+}
+
+export async function sendLeaveRequestSubmittedNotifications(
+  leaveRequestId: string,
+) {
+  try {
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: leaveRequestId },
+      include: { user: true },
+    });
+
+    if (!leaveRequest) return { error: "Leave request not found" };
+
+    const supervisors = await prisma.user.findMany({
+      where: {
+        role: { in: ["MANAGER", "ADMIN"] },
+        email: { not: "" },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    const results = [];
+
+    for (const supervisor of supervisors) {
+      if (!supervisor.email) continue;
+
+      const emailResult = await sendLeaveRequestSubmittedEmail(
+        supervisor.email,
+        supervisor.name || "Supervisor",
+        leaveRequest.user.name || "Team member",
+        leaveRequest.type,
+        leaveRequest.startDate,
+        leaveRequest.endDate,
+        leaveRequest.reason,
+      );
+
+      results.push({
+        userId: supervisor.id,
+        email: supervisor.email,
+        emailSent: emailResult.success,
+        error: emailResult.error,
+      });
+    }
+
+    return { success: true, processed: results.length, results };
+  } catch (error) {
+    console.error("Error sending leave request notifications:", error);
+    return { error };
+  }
+}
+
+export async function sendLeaveRequestDecisionNotification(
+  leaveRequestId: string,
+) {
+  try {
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: leaveRequestId },
+      include: {
+        user: true,
+        reviewer: true,
+      },
+    });
+
+    if (!leaveRequest) return { error: "Leave request not found" };
+    if (!leaveRequest.user.email) {
+      return { error: "Requester has no email address" };
+    }
+
+    const emailResult = await sendLeaveRequestDecisionEmail(
+      leaveRequest.user.email,
+      leaveRequest.user.name || "Team member",
+      leaveRequest.type,
+      leaveRequest.startDate,
+      leaveRequest.endDate,
+      leaveRequest.status,
+      leaveRequest.reviewer?.name || "Your supervisor",
+      leaveRequest.managerNote,
+    );
+
+    return {
+      success: true,
+      userId: leaveRequest.user.id,
+      email: leaveRequest.user.email,
+      emailSent: emailResult.success,
+      error: emailResult.error,
+    };
+  } catch (error) {
+    console.error("Error sending leave decision notification:", error);
     return { error };
   }
 }

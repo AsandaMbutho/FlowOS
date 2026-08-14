@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { sendSupervisorCommentNotifications } from "@/lib/email-notifications";
 
 // GET /api/comments?workflowId=xxx
 export async function GET(request: Request) {
@@ -83,6 +84,8 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    await sendSupervisorCommentNotifications(comment.id);
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

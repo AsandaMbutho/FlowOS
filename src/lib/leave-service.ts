@@ -1,5 +1,9 @@
 import { prisma } from "./prisma";
 import { LeaveType } from "@prisma/client";
+import {
+  sendLeaveRequestDecisionNotification,
+  sendLeaveRequestSubmittedNotifications,
+} from "./email-notifications";
 
 
 export interface SubmitLeaveRequestInput {
@@ -51,6 +55,8 @@ export async function submitLeaveRequest(
       },
     },
   });
+
+  await sendLeaveRequestSubmittedNotifications(leaveRequest.id);
 
   return leaveRequest;
 }
@@ -175,6 +181,8 @@ export async function decideLeaveRequest(
       },
     },
   });
+
+  await sendLeaveRequestDecisionNotification(updated.id);
 
   return updated;
 }

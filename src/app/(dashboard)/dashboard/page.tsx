@@ -7,6 +7,7 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { GoogleCalendarCard } from "@/components/dashboard/google-calendar-card";
+import { MiniDayCalendar } from "@/components/dashboard/mini-day-calendar";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
@@ -22,6 +23,7 @@ import {
   File,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const DATE_OPTIONS = ["Today", "This Week", "This Month", "Last 30 Days"];
 
@@ -32,6 +34,7 @@ interface Workflow {
   priority: string;
   team: string;
   dueDate: string;
+  dueDateIso?: string | null;
   progress: number;
   tasksLeft: number;
   assignee: { name: string };
@@ -40,6 +43,7 @@ interface Workflow {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const currentUser = session?.user?.name ?? "";
+  const router = useRouter();
 
   const [dateRange, setDateRange] = useState("Today");
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -519,6 +523,16 @@ export default function DashboardPage() {
           </div>
           <ActivityFeed />
           <GoogleCalendarCard />
+          <MiniDayCalendar
+            tasks={myWorkflows.map((w) => ({
+              id: w.id,
+              title: w.title,
+              dueDateIso: w.dueDateIso ?? null,
+              status: w.status,
+              priority: w.priority,
+            }))}
+            onSelectTask={(id) => router.push(`/workflows/${id}`)}
+          />
         </div>
       </div>
 

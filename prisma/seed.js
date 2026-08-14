@@ -10,9 +10,8 @@ const users = [
   { email: "netshifirathemba0@gmail.com", name: "Themba", role: "MANAGER" },
   { email: "sridwaan0@gmail.com", name: "Ridwaan", role: "USER" },
   { email: "sizweschaba723@gmail.com", name: "Sizwe", role: "USER" },
-  { email: "lupreshire@gmail.com", name: "Lutendo Matshidze", role: "USER" },
-  { email: "moilamatlhodi707@gmail.com", name: "Matlhodi Moila", role: "USER" },
-  { email: "test@example.com", name: "Test User", role: "USER" },
+  { email: "lupreshire@gmail.com", name: "Lutendo", role: "USER" },
+  { email: "moilamatlhodi707@gmail.com", name: "Matlhodi", role: "USER" },
 ];
 
 async function ensureLeaveBalance(userId) {

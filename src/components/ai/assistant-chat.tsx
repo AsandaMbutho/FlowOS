@@ -1,10 +1,28 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Bot, Loader2, RotateCcw, Send, Sparkles, User } from "lucide-react";
+import {
+  Bot,
+  FileText,
+  Loader2,
+  Paperclip,
+  RotateCcw,
+  Send,
+  Sparkles,
+  User,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAIAssistant } from "@/lib/hooks/use-ai-assistant";
 import { cn } from "@/lib/utils";
+
+type AttachedDocument = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  extractedText?: string;
+};
 
 type ChatMessage = {
   id: string;
@@ -12,6 +30,7 @@ type ChatMessage = {
   text: string;
   createdAt: Date;
   actionExecuted?: boolean;
+  attachments?: AttachedDocument[];
 };
 
 const QUICK_PROMPTS = [
@@ -31,7 +50,10 @@ export function AIAssistantChat() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<AttachedDocument[]>([]);
+  const [attachmentError, setAttachmentError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const { sendMessage, loading, error, resetConversation } = useAIAssistant({
@@ -53,23 +75,29 @@ export function AIAssistantChat() {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
-  const sendUserMessage = async (text: string) => {
+  const sendUserMessage = async (
+    text: string,
+    documents = attachments,
+  ) => {
     const userMessage = text.trim();
-    if (!userMessage || loading) return;
+    if ((!userMessage && documents.length === 0) || loading) return;
 
     setInput("");
+    setAttachments([]);
+    setAttachmentError("");
     setMessages((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
         role: "user",
-        text: userMessage,
+        text: userMessage || "Please review the attached file.",
         createdAt: new Date(),
+        attachments: documents,
       },
     ]);
 
     try {
-      await sendMessage(userMessage);
+      await sendMessage(userMessage || "Please review the attached file.", documents);
     } catch {
       // The hook exposes the error below the composer.
     }
@@ -82,6 +110,8 @@ export function AIAssistantChat() {
 
   const handleReset = () => {
     resetConversation();
+    setAttachments([]);
+    setAttachmentError("");
     setMessages([
       {
         id: crypto.randomUUID(),
@@ -91,6 +121,60 @@ export function AIAssistantChat() {
       },
     ]);
     formRef.current?.reset();
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((current) => current.filter((file) => file.id !== id));
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (files.length === 0) return;
+
+    setAttachmentError("");
+
+    const nextAttachments: AttachedDocument[] = [];
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        setAttachmentError("Files must be 5MB or smaller.");
+        continue;
+      }
+
+      const isTextLike =
+        file.type.startsWith("text/") ||
+        [
+          "application/json",
+          "application/xml",
+          "application/csv",
+          "text/csv",
+          "text/markdown",
+        ].includes(file.type) ||
+        /\.(csv|json|md|txt|log|xml|html|css|js|ts|tsx)$/i.test(file.name);
+
+      let extractedText: string | undefined;
+      if (isTextLike) {
+        extractedText = (await file.text()).slice(0, 12000);
+      }
+
+      nextAttachments.push({
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.type || "Unknown type",
+        size: file.size,
+        extractedText,
+      });
+    }
+
+    setAttachments((current) => [...current, ...nextAttachments].slice(0, 5));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   };
 
   return (
@@ -123,6 +207,24 @@ export function AIAssistantChat() {
                 )}
               >
                 {message.text}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {message.attachments.map((file) => (
+                      <div
+                        key={file.id}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs",
+                          isUser
+                            ? "border-primary-foreground/20 bg-primary-foreground/10"
+                            : "border-border bg-muted/40",
+                        )}
+                      >
+                        <FileText className="size-3.5 shrink-0" />
+                        <span className="truncate">{file.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div
                   className={cn(
                     "mt-2 text-[11px]",
@@ -189,7 +291,55 @@ export function AIAssistantChat() {
           </div>
         )}
 
+        {attachmentError && (
+          <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+            {attachmentError}
+          </p>
+        )}
+
+        {attachments.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {attachments.map((file) => (
+              <div
+                key={file.id}
+                className="flex max-w-full items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground"
+              >
+                <FileText className="size-3.5 shrink-0" />
+                <span className="max-w-48 truncate">{file.name}</span>
+                <span className="shrink-0">{formatFileSize(file.size)}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(file.id)}
+                  className="rounded-full p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+            accept=".txt,.md,.csv,.json,.xml,.html,.css,.js,.ts,.tsx,.pdf,.doc,.docx,.xls,.xlsx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-11 shrink-0 rounded-full"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading || attachments.length >= 5}
+          >
+            <Paperclip className="size-4" />
+            <span className="sr-only">Attach files</span>
+          </Button>
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -207,7 +357,7 @@ export function AIAssistantChat() {
             type="submit"
             size="icon"
             className="size-11 shrink-0 rounded-full"
-            disabled={loading || !input.trim()}
+            disabled={loading || (!input.trim() && attachments.length === 0)}
           >
             <Send className="size-4" />
             <span className="sr-only">Send</span>

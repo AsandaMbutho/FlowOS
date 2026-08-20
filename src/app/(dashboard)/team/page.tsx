@@ -34,7 +34,11 @@ const defaultTeam: TeamMember[] = [
   {
     id: "1",
     name: "Themba",
+<<<<<<< HEAD
     email: "themba@mediaonafrica.co.za",
+=======
+    email: "netshifirathemba0@gmail.com",
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     role: "Supervisor",
     status: "Active",
     initials: "T",
@@ -47,7 +51,11 @@ const defaultTeam: TeamMember[] = [
   {
     id: "2",
     name: "Asanda",
+<<<<<<< HEAD
     email: "asanda@mediaonafrica.co.za",
+=======
+    email: "asandambutho@icloud.com",
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     role: "Developer",
     status: "Active",
     initials: "A",
@@ -60,7 +68,11 @@ const defaultTeam: TeamMember[] = [
   {
     id: "3",
     name: "Sizwe",
+<<<<<<< HEAD
     email: "sizwe@mediaonafrica.co.za",
+=======
+    email: "sizweschaba723@gmail.com",
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     role: "Developer",
     status: "Active",
     initials: "S",
@@ -70,6 +82,61 @@ const defaultTeam: TeamMember[] = [
     completedWorkflows: 0,
     avgProgress: 0,
   },
+<<<<<<< HEAD
+=======
+  {
+    id: "4",
+    name: "Ridwaan",
+    email: "sridwaan0@gmail.com",
+    role: "Developer",
+    status: "Active",
+    initials: "R",
+    color: "from-orange-500 to-red-600",
+    badge: "Developer",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+  {
+    id: "5",
+    name: "Matlhodi",
+    email: "moilamatlhodi707@gmail.com",
+    role: "Developer",
+    status: "Active",
+    initials: "M",
+    color: "from-rose-500 to-pink-600",
+    badge: "Developer",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+  {
+    id: "6",
+    name: "Lutendo",
+    email: "lupreshire@gmail.com",
+    role: "Developer",
+    status: "Active",
+    initials: "L",
+    color: "from-indigo-500 to-blue-600",
+    badge: "Developer",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+  {
+    id: "7",
+    name: "Neo Matekane",
+    email: "neomate03@gmail.com",
+    role: "Data Analyst",
+    status: "Active",
+    initials: "NM",
+    color: "from-amber-500 to-cyan-600",
+    badge: "Data Analyst",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 ];
 
 const statusColors: Record<string, string> = {
@@ -83,6 +150,11 @@ const roleBadgeColors: Record<string, string> = {
     "bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-700 border-indigo-200",
   Developer:
     "bg-gradient-to-r from-teal-100 to-emerald-100 text-emerald-700 border-emerald-200",
+<<<<<<< HEAD
+=======
+  "Data Analyst":
+    "bg-gradient-to-r from-amber-100 to-cyan-100 text-cyan-800 border-cyan-200",
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 };
 
 export default function TeamPage() {
@@ -149,7 +221,11 @@ export default function TeamPage() {
 
   const totalActive = team.filter((m) => m.status === "Active").length;
   const totalSupervisors = team.filter((m) => m.badge === "Supervisor").length;
+<<<<<<< HEAD
   const totalDevelopers = team.filter((m) => m.badge === "Developer").length;
+=======
+  const totalMembers = team.filter((m) => m.badge !== "Supervisor").length;
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
   const overallAvg =
     team.filter((m) => m.workflowCount > 0).length > 0
       ? Math.round(
@@ -300,8 +376,13 @@ export default function TeamPage() {
             <Code className="w-5 h-5 text-blue-600" />
           </div>
           <div>
+<<<<<<< HEAD
             <div className="text-xl font-bold">{totalDevelopers}</div>
             <div className="text-sm text-muted-foreground">Developers</div>
+=======
+            <div className="text-xl font-bold">{totalMembers}</div>
+            <div className="text-sm text-muted-foreground">Members</div>
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
           </div>
         </div>
         <div className="card-depth p-4 flex items-center gap-3">

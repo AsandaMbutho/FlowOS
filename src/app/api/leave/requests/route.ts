@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+<<<<<<< HEAD
+=======
+import { authOptions } from "@/lib/auth";
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 import { prisma } from "@/lib/prisma";
 import { sendLeaveRequestSubmittedNotifications } from "@/lib/email-notifications";
 
 // GET - Get user's leave requests
 export async function GET(req: NextRequest) {
   try {
+<<<<<<< HEAD
     const session = await getServerSession();
+=======
+    const session = await getServerSession(authOptions);
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -62,7 +70,11 @@ export async function GET(req: NextRequest) {
 // POST - Create new leave request
 export async function POST(req: NextRequest) {
   try {
+<<<<<<< HEAD
     const session = await getServerSession();
+=======
+    const session = await getServerSession(authOptions);
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

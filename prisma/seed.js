@@ -12,6 +12,10 @@ const users = [
   { email: "sizweschaba723@gmail.com", name: "Sizwe", role: "USER" },
   { email: "lupreshire@gmail.com", name: "Lutendo", role: "USER" },
   { email: "moilamatlhodi707@gmail.com", name: "Matlhodi", role: "USER" },
+<<<<<<< HEAD
+=======
+  { email: "neomate03@gmail.com", name: "Neo Matekane", role: "USER" },
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 ];
 
 async function ensureLeaveBalance(userId) {

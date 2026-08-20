@@ -7,6 +7,10 @@ import {
   sendTaskCompletedEmail,
   sendSupervisorCommentUpdateEmail,
   sendLeaveRequestSubmittedEmail,
+<<<<<<< HEAD
+=======
+  sendLeaveRequestSubmissionConfirmationEmail,
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
   sendLeaveRequestDecisionEmail,
 } from "./email";
 
@@ -238,6 +242,39 @@ export async function sendLeaveRequestSubmittedNotifications(
 
     if (!leaveRequest) return { error: "Leave request not found" };
 
+<<<<<<< HEAD
+=======
+    let requesterEmailResult:
+      | Awaited<ReturnType<typeof sendLeaveRequestSubmissionConfirmationEmail>>
+      | undefined;
+
+    if (leaveRequest.user.email) {
+      requesterEmailResult = await sendLeaveRequestSubmissionConfirmationEmail(
+        leaveRequest.user.email,
+        leaveRequest.user.name || "Team member",
+        leaveRequest.type,
+        leaveRequest.startDate,
+        leaveRequest.endDate,
+        leaveRequest.reason,
+      );
+
+      await prisma.notification.create({
+        data: {
+          type: "ASSIGNED",
+          title: "Leave request submitted",
+          message:
+            "Your leave request was submitted successfully and is pending supervisor review.",
+          userId: leaveRequest.user.id,
+          emailSent: requesterEmailResult.success,
+          emailError: requesterEmailResult.success
+            ? null
+            : String(requesterEmailResult.error),
+          emailSentAt: requesterEmailResult.success ? new Date() : null,
+        },
+      });
+    }
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     const supervisors = await prisma.user.findMany({
       where: {
         role: { in: ["MANAGER", "ADMIN"] },
@@ -273,7 +310,16 @@ export async function sendLeaveRequestSubmittedNotifications(
       });
     }
 
+<<<<<<< HEAD
     return { success: true, processed: results.length, results };
+=======
+    return {
+      success: true,
+      requesterEmailSent: requesterEmailResult?.success ?? false,
+      processed: results.length,
+      results,
+    };
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
   } catch (error) {
     console.error("Error sending leave request notifications:", error);
     return { error };
@@ -308,6 +354,21 @@ export async function sendLeaveRequestDecisionNotification(
       leaveRequest.managerNote,
     );
 
+<<<<<<< HEAD
+=======
+    await prisma.notification.create({
+      data: {
+        type: "STATUS_CHANGE",
+        title: `Leave request ${leaveRequest.status.toLowerCase()}`,
+        message: `Your ${leaveRequest.type.toLowerCase()} leave request from ${leaveRequest.startDate.toLocaleDateString()} to ${leaveRequest.endDate.toLocaleDateString()} was ${leaveRequest.status.toLowerCase()} by ${leaveRequest.reviewer?.name || "your supervisor"}.`,
+        userId: leaveRequest.user.id,
+        emailSent: emailResult.success,
+        emailError: emailResult.success ? null : String(emailResult.error),
+        emailSentAt: emailResult.success ? new Date() : null,
+      },
+    });
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     return {
       success: true,
       userId: leaveRequest.user.id,

@@ -22,6 +22,20 @@ export async function GET(request: Request) {
       include: {
         assignee: { select: { id: true, name: true, email: true, role: true } },
         tasks: { select: { id: true, completed: true } },
+<<<<<<< HEAD
+=======
+        activities: {
+          where: {
+            OR: [
+              { action: "assigned" },
+              { action: "created" },
+            ],
+          },
+          select: { action: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
         files: {
           // 👈 ADD THIS: include files
           select: {
@@ -64,6 +78,16 @@ export async function GET(request: Request) {
       dueDate: formatDueDate(w.dueDate, w.progress, w.completedAt),
       dueDateIso: w.dueDate ? w.dueDate.toISOString() : null,
       completedAt: w.completedAt ? w.completedAt.toISOString() : null,
+<<<<<<< HEAD
+=======
+      createdAt: w.createdAt.toISOString(),
+      assignedDateIso:
+        w.assignee && w.activities[0]
+          ? w.activities[0].createdAt.toISOString()
+          : w.assignee
+            ? w.createdAt.toISOString()
+            : null,
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
       files: w.files.map((f) => ({
         // 👈 ADD THIS: shape the files data
         id: f.id,
@@ -180,6 +204,13 @@ export async function POST(request: Request) {
           workflow.completedAt,
         ),
         dueDateIso: workflow.dueDate ? workflow.dueDate.toISOString() : null,
+<<<<<<< HEAD
+=======
+        createdAt: workflow.createdAt.toISOString(),
+        assignedDateIso: workflow.assignee
+          ? workflow.createdAt.toISOString()
+          : null,
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
         files: workflow.files.map((f) => ({
           id: f.id,
           filename: f.filename,
@@ -266,6 +297,10 @@ function assigneeColor(name: string): string {
     Ridwaan: "from-orange-500 to-red-500",
     Lutendo: "from-indigo-500 to-blue-500",
     Matlhodi: "from-rose-500 to-pink-500",
+<<<<<<< HEAD
+=======
+    "Neo Matekane": "from-amber-500 to-cyan-500",
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
   };
   return colors[name] ?? "from-gray-400 to-gray-500";
 }

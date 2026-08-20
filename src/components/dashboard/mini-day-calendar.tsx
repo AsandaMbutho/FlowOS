@@ -20,9 +20,16 @@ import { ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
 interface TaskItem {
   id: string;
   title: string;
+<<<<<<< HEAD
   dueDateIso: string | null;
   status: string;
   priority?: "LOW" | "MEDIUM" | "HIGH" | string;
+=======
+  assignedDateIso: string | null;
+  status: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | string;
+  assigneeName?: string;
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 }
 
 interface MiniDayCalendarProps {
@@ -46,11 +53,19 @@ export function MiniDayCalendar({ tasks, onSelectTask }: MiniDayCalendarProps) {
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
+<<<<<<< HEAD
   const tasksByDay = useMemo(() => {
     const map = new Map<string, TaskItem[]>();
     tasks.forEach((t) => {
       if (!t.dueDateIso) return;
       const key = format(parseISO(t.dueDateIso), "yyyy-MM-dd");
+=======
+  const assignedWorkflowsByDay = useMemo(() => {
+    const map = new Map<string, TaskItem[]>();
+    tasks.forEach((t) => {
+      if (!t.assignedDateIso) return;
+      const key = format(parseISO(t.assignedDateIso), "yyyy-MM-dd");
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(t);
     });
@@ -58,14 +73,22 @@ export function MiniDayCalendar({ tasks, onSelectTask }: MiniDayCalendarProps) {
   }, [tasks]);
 
   const selectedKey = format(selectedDay, "yyyy-MM-dd");
+<<<<<<< HEAD
   const selectedTasks = tasksByDay.get(selectedKey) ?? [];
+=======
+  const selectedTasks = assignedWorkflowsByDay.get(selectedKey) ?? [];
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 
   return (
     <section className="card-depth p-4 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
           <CalendarClock className="w-4 h-4 text-accent" />
+<<<<<<< HEAD
           FlowOS Calendar
+=======
+          Assigned Workflows
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
         </h2>
         <div className="flex items-center gap-0.5">
           <button
@@ -115,7 +138,11 @@ export function MiniDayCalendar({ tasks, onSelectTask }: MiniDayCalendarProps) {
       <div className="grid grid-cols-7 gap-0.5">
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
+<<<<<<< HEAD
           const dayTasks = tasksByDay.get(key) ?? [];
+=======
+          const dayTasks = assignedWorkflowsByDay.get(key) ?? [];
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
           const inMonth = isSameMonth(day, currentMonth);
           const selected = isSameDay(day, selectedDay);
           const today = isToday(day);
@@ -161,7 +188,13 @@ export function MiniDayCalendar({ tasks, onSelectTask }: MiniDayCalendarProps) {
         </p>
 
         {selectedTasks.length === 0 ? (
+<<<<<<< HEAD
           <p className="text-sm text-muted-foreground">No tasks due.</p>
+=======
+          <p className="text-sm text-muted-foreground">
+            No workflows assigned.
+          </p>
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
         ) : (
           <ul className="space-y-1.5">
             {selectedTasks.map((t) => (
@@ -182,7 +215,11 @@ export function MiniDayCalendar({ tasks, onSelectTask }: MiniDayCalendarProps) {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 pl-3">
+<<<<<<< HEAD
                     {t.status}
+=======
+                    Assigned to {t.assigneeName || "Unassigned"} · {t.status}
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
                   </p>
                 </button>
               </li>

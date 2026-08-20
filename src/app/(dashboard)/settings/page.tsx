@@ -772,6 +772,15 @@ export default function SettingsPage() {
                   email: "lupreshire@gmail.com",
                   color: "from-indigo-500 to-blue-500",
                 },
+<<<<<<< HEAD
+=======
+                {
+                  name: "Neo Matekane",
+                  role: "USER",
+                  email: "neomate03@gmail.com",
+                  color: "from-amber-500 to-cyan-500",
+                },
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
               ].map((member) => (
                 <div
                   key={member.name}

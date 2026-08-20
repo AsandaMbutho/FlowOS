@@ -4,12 +4,22 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const TEAM_ROSTER = [
+<<<<<<< HEAD
   { name: "Asanda", email: "asandambutho@icloud.com" },
   { name: "Sizwe", email: "sizweschaba723@gmail.com" },
   { name: "Themba", email: "netshifirathemba0@gmail.com" },
   { name: "Matlhodi", email: "moilamatlhodi707@gmail.com" },
   { name: "Lutendo", email: "lupreshire@gmail.com" },
   { name: "Ridwaan", email: "sridwaan0@gmail.com" },
+=======
+  { name: "Asanda", email: "asandambutho@icloud.com", role: Role.USER },
+  { name: "Sizwe", email: "sizweschaba723@gmail.com", role: Role.USER },
+  { name: "Themba", email: "netshifirathemba0@gmail.com", role: Role.MANAGER },
+  { name: "Matlhodi", email: "moilamatlhodi707@gmail.com", role: Role.USER },
+  { name: "Lutendo", email: "lupreshire@gmail.com", role: Role.USER },
+  { name: "Ridwaan", email: "sridwaan0@gmail.com", role: Role.USER },
+  { name: "Neo Matekane", email: "neomate03@gmail.com", role: Role.USER },
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 ];
 
 async function main() {
@@ -29,6 +39,17 @@ async function main() {
   // to everyone happens by looping over real users when assigneeId is null.
   await deleteUserAndUnassign("Everyone", summary);
 
+<<<<<<< HEAD
+=======
+  // Stray duplicate/test accounts that show up in the attendee picker
+  // alongside the real roster below (e.g. "Matlhodi" AND "Matlhodi Moila").
+  // These aren't in TEAM_ROSTER so the name/email matching below would
+  // never touch them — they have to be deleted explicitly.
+  await deleteUserAndUnassign("Lutendo Matshidze", summary);
+  await deleteUserAndUnassign("Matlhodi Moila", summary);
+  await deleteUserAndUnassign("Test User", summary);
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
   const placeholderPassword = await bcrypt.hash("password123", 10);
 
   for (const member of TEAM_ROSTER) {
@@ -39,8 +60,14 @@ async function main() {
     if (existingByName) {
       await prisma.user.update({
         where: { id: existingByName.id },
+<<<<<<< HEAD
         data: { email: member.email },
       });
+=======
+        data: { email: member.email, role: member.role },
+      });
+      await ensureLeaveBalance(existingByName.id);
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
       summary.updated.push(`${member.name} -> ${member.email}`);
       continue;
     }
@@ -52,12 +79,19 @@ async function main() {
     if (existingByEmail) {
       await prisma.user.update({
         where: { id: existingByEmail.id },
+<<<<<<< HEAD
         data: { name: member.name },
       });
+=======
+        data: { name: member.name, role: member.role },
+      });
+      await ensureLeaveBalance(existingByEmail.id);
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
       summary.updated.push(`${member.name} -> ${member.email}`);
       continue;
     }
 
+<<<<<<< HEAD
     await prisma.user.create({
       data: {
         name: member.name,
@@ -66,6 +100,17 @@ async function main() {
         password: placeholderPassword,
       },
     });
+=======
+    const created = await prisma.user.create({
+      data: {
+        name: member.name,
+        email: member.email,
+        role: member.role,
+        password: placeholderPassword,
+      },
+    });
+    await ensureLeaveBalance(created.id);
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
     summary.created.push(`${member.name} -> ${member.email}`);
   }
 
@@ -77,6 +122,27 @@ async function main() {
   console.log(`Updated: ${summary.updated.join(", ") || "none"}`);
 }
 
+<<<<<<< HEAD
+=======
+async function ensureLeaveBalance(userId: string) {
+  await prisma.leaveBalance.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      userId,
+      annualEntitlement: 20,
+      annualUsed: 0,
+      annualCarryOver: 0,
+      sickEntitlement: 10,
+      sickUsed: 0,
+      sickCarryOver: 0,
+      personalEntitlement: 3,
+      personalUsed: 0,
+    },
+  });
+}
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 async function deleteUserAndUnassign(
   name: string,
   summary: {

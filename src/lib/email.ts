@@ -272,6 +272,44 @@ export const emailTemplates = {
     text: `${requesterName} submitted a ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}. Reason: ${reason}. Review it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
   }),
 
+<<<<<<< HEAD
+=======
+  leaveRequestSubmissionConfirmation: (
+    requesterName: string,
+    leaveType: string,
+    startDate: Date,
+    endDate: Date,
+    reason: string,
+  ) => ({
+    subject: `Leave request submitted successfully: ${leaveType}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #0f1f3d; padding: 20px; text-align: center;">
+          <h1 style="color: #10b981; margin: 0;">FlowOS</h1>
+        </div>
+        <div style="padding: 20px; background-color: #ffffff;">
+          <h2 style="color: #0f1f3d;">Leave Request Submitted</h2>
+          <p>Hello <strong>${requesterName}</strong>,</p>
+          <p>Your leave request has been submitted successfully and is pending supervisor review.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p><strong>Type:</strong> ${leaveType}</p>
+            <p><strong>Dates:</strong> ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+            <p><strong>Reason:</strong> ${reason}</p>
+          </div>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/leave" 
+             style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 10px;">
+            View Leave Request
+          </a>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+            You will receive another email when your supervisor approves or rejects this request.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `Hello ${requesterName}, your ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()} has been submitted successfully and is pending supervisor review. Reason: ${reason}. View it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
+  }),
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
   leaveRequestDecision: (
     requesterName: string,
     leaveType: string,
@@ -505,6 +543,32 @@ export async function sendLeaveRequestSubmittedEmail(
   });
 }
 
+<<<<<<< HEAD
+=======
+export async function sendLeaveRequestSubmissionConfirmationEmail(
+  requesterEmail: string,
+  requesterName: string,
+  leaveType: string,
+  startDate: Date,
+  endDate: Date,
+  reason: string,
+) {
+  const template = emailTemplates.leaveRequestSubmissionConfirmation(
+    requesterName,
+    leaveType,
+    startDate,
+    endDate,
+    reason,
+  );
+  return sendEmail({
+    to: requesterEmail,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
+}
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 export async function sendLeaveRequestDecisionEmail(
   requesterEmail: string,
   requesterName: string,

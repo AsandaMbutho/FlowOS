@@ -13,10 +13,18 @@ export interface ExtractedAction {
 }
 
 export interface ParsedAction {
+<<<<<<< HEAD
   type: 'create_task' | 'create_workflow_item';
   title: string;
   assignedToName?: string;
   dueDate?: string;
+=======
+  type: 'create_task' | 'create_workflow_item' | 'find_non_commenters';
+  title?: string;
+  assignedToName?: string;
+  dueDate?: string;
+  workflowTitle?: string;
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
 }
 
 /**
@@ -77,6 +85,11 @@ export async function executeAction(
   try {
     switch (action.type) {
       case 'create_task': {
+<<<<<<< HEAD
+=======
+        if (!action.title) return null;
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
         const assignedTo = await resolveAssignee(
           action.assignedToName,
           members,
@@ -110,6 +123,11 @@ export async function executeAction(
       }
 
       case 'create_workflow_item': {
+<<<<<<< HEAD
+=======
+        if (!action.title) return null;
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
         const assignedTo = await resolveAssignee(
           action.assignedToName,
           members,
@@ -130,6 +148,13 @@ export async function executeAction(
         return `Added "${action.title}" to the pipeline board for ${name}.`;
       }
 
+<<<<<<< HEAD
+=======
+      case 'find_non_commenters': {
+        return findNonCommenters(action.workflowTitle, members);
+      }
+
+>>>>>>> e556ec4 (Add Neo Matekane demo member)
       default:
         return null;
     }
@@ -138,3 +163,45 @@ export async function executeAction(
     throw error;
   }
 }
+<<<<<<< HEAD
+=======
+
+/**
+ * Looks up a workflow by a (possibly partial/fuzzy) title, then reports
+ * which org members haven't left a comment on it yet.
+ */
+async function findNonCommenters(
+  workflowTitle: string | undefined,
+  members: Array<{ id: string; name: string | null }>
+): Promise<string> {
+  if (!workflowTitle) {
+    return "I need a workflow name to check who hasn't commented yet.";
+  }
+
+  const workflow = await prisma.workflow.findFirst({
+    where: { title: { contains: workflowTitle } },
+    include: {
+      comments: { select: { authorId: true } },
+    },
+  });
+
+  if (!workflow) {
+    return `I couldn't find a workflow matching "${workflowTitle}".`;
+  }
+
+  const commenterIds = new Set(
+    workflow.comments
+      .map((c: { authorId: string | null }) => c.authorId)
+      .filter((id: string | null): id is string => Boolean(id))
+  );
+
+  const nonCommenters = members.filter((m) => !commenterIds.has(m.id));
+
+  if (nonCommenters.length === 0) {
+    return `Everyone on the team has commented on "${workflow.title}".`;
+  }
+
+  const names = nonCommenters.map((m) => m.name || 'Unnamed user').join(', ');
+  return `Haven't commented on "${workflow.title}" yet: ${names}.`;
+}
+>>>>>>> e556ec4 (Add Neo Matekane demo member)

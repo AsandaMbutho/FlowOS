@@ -32,11 +32,8 @@ interface Workflow {
   status: string;
   priority: string;
   dueDate: string;
-<<<<<<< HEAD
-=======
   dueDateIso?: string | null;
   assignedDateIso?: string | null;
->>>>>>> e556ec4 (Add Neo Matekane demo member)
   progress: number;
   createdAt: string;
   assignee: { name: string; email?: string };

@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-<<<<<<< HEAD
-=======
 import { createNotification } from "@/lib/notifications";
 import { sendMentionEmail } from "@/lib/email";
 import { resolveMentionedUsers } from "@/lib/comment-mentions";
->>>>>>> e556ec4 (Add Neo Matekane demo member)
 
 // PATCH - Edit a comment
 export async function PATCH(
@@ -23,16 +20,6 @@ export async function PATCH(
       );
     }
 
-<<<<<<< HEAD
-    const comment = await db.comment.update({
-      where: { id },
-      data: { body: body.trim() },
-      include: {
-        author: { select: { id: true, name: true } },
-      },
-    });
-
-=======
     // Mentions already recorded on this comment before the edit, so we only
     // notify users newly added by this edit, not ones mentioned already.
     const existingMentions = await db.commentMention.findMany({
@@ -87,7 +74,6 @@ export async function PATCH(
       }
     }
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
     return NextResponse.json(comment);
   } catch (error) {
     console.error("PATCH comment error:", error);

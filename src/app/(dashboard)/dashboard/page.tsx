@@ -35,11 +35,8 @@ interface Workflow {
   team: string;
   dueDate: string;
   dueDateIso?: string | null;
-<<<<<<< HEAD
-=======
   assignedDateIso?: string | null;
   createdAt?: string;
->>>>>>> e556ec4 (Add Neo Matekane demo member)
   progress: number;
   tasksLeft: number;
   assignee: { name: string };
@@ -532,16 +529,10 @@ export default function DashboardPage() {
             tasks={myWorkflows.map((w) => ({
               id: w.id,
               title: w.title,
-<<<<<<< HEAD
-              dueDateIso: w.dueDateIso ?? null,
-              status: w.status,
-              priority: w.priority,
-=======
               assignedDateIso: w.assignedDateIso ?? w.createdAt ?? null,
               status: w.status,
               priority: w.priority,
               assigneeName: w.assignee?.name ?? "Unassigned",
->>>>>>> e556ec4 (Add Neo Matekane demo member)
             }))}
             onSelectTask={(id) => router.push(`/workflows/${id}`)}
           />

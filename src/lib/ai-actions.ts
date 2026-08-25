@@ -13,18 +13,11 @@ export interface ExtractedAction {
 }
 
 export interface ParsedAction {
-<<<<<<< HEAD
-  type: 'create_task' | 'create_workflow_item';
-  title: string;
-  assignedToName?: string;
-  dueDate?: string;
-=======
   type: 'create_task' | 'create_workflow_item' | 'find_non_commenters';
   title?: string;
   assignedToName?: string;
   dueDate?: string;
   workflowTitle?: string;
->>>>>>> e556ec4 (Add Neo Matekane demo member)
 }
 
 /**
@@ -85,11 +78,8 @@ export async function executeAction(
   try {
     switch (action.type) {
       case 'create_task': {
-<<<<<<< HEAD
-=======
         if (!action.title) return null;
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
         const assignedTo = await resolveAssignee(
           action.assignedToName,
           members,
@@ -123,11 +113,8 @@ export async function executeAction(
       }
 
       case 'create_workflow_item': {
-<<<<<<< HEAD
-=======
         if (!action.title) return null;
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
         const assignedTo = await resolveAssignee(
           action.assignedToName,
           members,
@@ -148,13 +135,10 @@ export async function executeAction(
         return `Added "${action.title}" to the pipeline board for ${name}.`;
       }
 
-<<<<<<< HEAD
-=======
       case 'find_non_commenters': {
         return findNonCommenters(action.workflowTitle, members);
       }
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
       default:
         return null;
     }
@@ -163,8 +147,6 @@ export async function executeAction(
     throw error;
   }
 }
-<<<<<<< HEAD
-=======
 
 /**
  * Looks up a workflow by a (possibly partial/fuzzy) title, then reports
@@ -204,4 +186,3 @@ async function findNonCommenters(
   const names = nonCommenters.map((m) => m.name || 'Unnamed user').join(', ');
   return `Haven't commented on "${workflow.title}" yet: ${names}.`;
 }
->>>>>>> e556ec4 (Add Neo Matekane demo member)

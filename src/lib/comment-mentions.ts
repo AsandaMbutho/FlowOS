@@ -6,19 +6,12 @@ type MentionedUser = {
   email: string;
 };
 
-<<<<<<< HEAD
-const NAME_ALIASES: Record<string, string[]> = {
-  lutendo: ["lutendo matshidze"],
-  matlhodi: ["matlhodi moila"],
-};
-=======
 // Extra short-name -> full-name mappings for cases where a user's display
 // name doesn't share a first token with what people type after "@" (e.g.
 // nicknames). Keep this in sync with the current team roster — stale
 // entries pointing at names nobody actually has just mean @mentions for
 // those tokens silently match no one and no email goes out.
 const NAME_ALIASES: Record<string, string[]> = {};
->>>>>>> e556ec4 (Add Neo Matekane demo member)
 
 function normalizeMention(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");

@@ -45,11 +45,7 @@ export function AIAssistantChat() {
     {
       id: "welcome",
       role: "assistant",
-<<<<<<< HEAD
-      text: "Hi, I am your FlowOS assistant. Ask me to summarize work, draft updates, create tasks, or add workflow items.",
-=======
       text: "Hello, I am your FlowOS assistant, How can I assist you today?",
->>>>>>> e556ec4 (Add Neo Matekane demo member)
       createdAt: new Date(),
     },
   ]);

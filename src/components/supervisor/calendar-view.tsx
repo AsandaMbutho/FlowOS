@@ -31,28 +31,6 @@ interface CalendarEvent {
   };
 }
 
-<<<<<<< HEAD
-function parseDueDate(dueDate: any, dueDateIso?: string | null): Date | null {
-  if (dueDateIso) {
-    const date = new Date(dueDateIso);
-    if (!isNaN(date.getTime())) return date;
-  }
-
-  if (!dueDate || dueDate === "No due date") return null;
-  if (dueDate === "Today" || dueDate === "Overdue") return new Date();
-  if (dueDate === "Tomorrow") {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow;
-  }
-
-  try {
-    const date = new Date(dueDate);
-    if (!isNaN(date.getTime())) return date;
-  } catch (e) {}
-
-  return new Date();
-=======
 function parseWorkflowDate(dateIso?: string | null): Date | null {
   if (dateIso) {
     const date = new Date(dateIso);
@@ -60,7 +38,6 @@ function parseWorkflowDate(dateIso?: string | null): Date | null {
   }
 
   return null;
->>>>>>> e556ec4 (Add Neo Matekane demo member)
 }
 
 export function CalendarView({ workflows }: { workflows: any[] }) {
@@ -73,15 +50,6 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
 
   useEffect(() => {
     const mappedEvents = workflows
-<<<<<<< HEAD
-      .filter((workflow) => workflow.dueDate)
-      .map((workflow) => {
-        const parsedDate = parseDueDate(workflow.dueDate, workflow.dueDateIso);
-        if (!parsedDate) return null;
-        return {
-          id: workflow.id,
-          title: workflow.title,
-=======
       .filter((workflow) => workflow.assignedDateIso || workflow.createdAt)
       .map((workflow) => {
         const parsedDate = parseWorkflowDate(
@@ -91,7 +59,6 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
         return {
           id: workflow.id,
           title: `${workflow.title} - ${workflow.assignee?.name || "Unassigned"}`,
->>>>>>> e556ec4 (Add Neo Matekane demo member)
           start: parsedDate,
           end: parsedDate,
           resource: {
@@ -145,15 +112,6 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
   };
 
   const eventStyleGetter = (event: CalendarEvent) => {
-<<<<<<< HEAD
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const eventDate = new Date(event.start);
-    eventDate.setHours(0, 0, 0, 0);
-
-    const isOverdue = eventDate < today && event.resource?.progress !== 100;
-=======
->>>>>>> e556ec4 (Add Neo Matekane demo member)
     const isCompleted = event.resource?.progress === 100;
     const isHighPriority = event.resource?.priority === "HIGH";
 
@@ -161,11 +119,6 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
 
     if (isCompleted) {
       backgroundColor = "#10b981";
-<<<<<<< HEAD
-    } else if (isOverdue) {
-      backgroundColor = "#ef4444";
-=======
->>>>>>> e556ec4 (Add Neo Matekane demo member)
     } else if (isHighPriority) {
       backgroundColor = "#f59e0b";
     }
@@ -285,17 +238,6 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
       <div className="flex flex-wrap gap-4 mt-4 pt-2 border-t">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-<<<<<<< HEAD
-          <span className="text-xs">On Track</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-          <span className="text-xs">High Priority</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <span className="text-xs">Overdue</span>
-=======
               <span className="text-xs">Assigned</span>
         </div>
         <div className="flex items-center gap-2">
@@ -305,7 +247,6 @@ export function CalendarView({ workflows }: { workflows: any[] }) {
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500"></div>
           <span className="text-xs">Needs Attention</span>
->>>>>>> e556ec4 (Add Neo Matekane demo member)
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-green-500"></div>

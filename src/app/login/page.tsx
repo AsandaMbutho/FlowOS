@@ -69,15 +69,12 @@ export default function LoginPage() {
       password: "password123",
       role: "USER",
     },
-<<<<<<< HEAD
-=======
     {
       name: "Neo Matekane (Data Analyst)",
       email: "neomate03@gmail.com",
       password: "password123",
       role: "USER",
     },
->>>>>>> e556ec4 (Add Neo Matekane demo member)
   ];
 
   const quickLogin = async (demo: (typeof demoLogins)[0]) => {

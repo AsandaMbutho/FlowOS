@@ -240,8 +240,6 @@ export async function PATCH(
         userId: assignee.id,
         workflowId: id,
       });
-<<<<<<< HEAD
-=======
 
       await db.activity.create({
         data: {
@@ -251,7 +249,6 @@ export async function PATCH(
           userId: assignee.id,
         },
       });
->>>>>>> e556ec4 (Add Neo Matekane demo member)
     }
 
     await db.activity.create({

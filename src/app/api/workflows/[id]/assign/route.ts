@@ -45,8 +45,6 @@ export async function POST(
       workflowId: id,
     });
 
-<<<<<<< HEAD
-=======
     await db.activity.create({
       data: {
         action: "assigned",
@@ -56,7 +54,6 @@ export async function POST(
       },
     });
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
     // Send email notification
     if (assignee?.email) {
       const emailResult = await triggerAssignmentEmail(

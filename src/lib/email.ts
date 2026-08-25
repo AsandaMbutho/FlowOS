@@ -272,8 +272,6 @@ export const emailTemplates = {
     text: `${requesterName} submitted a ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}. Reason: ${reason}. Review it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
   }),
 
-<<<<<<< HEAD
-=======
   leaveRequestSubmissionConfirmation: (
     requesterName: string,
     leaveType: string,
@@ -309,7 +307,6 @@ export const emailTemplates = {
     text: `Hello ${requesterName}, your ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()} has been submitted successfully and is pending supervisor review. Reason: ${reason}. View it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
   }),
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
   leaveRequestDecision: (
     requesterName: string,
     leaveType: string,
@@ -543,8 +540,6 @@ export async function sendLeaveRequestSubmittedEmail(
   });
 }
 
-<<<<<<< HEAD
-=======
 export async function sendLeaveRequestSubmissionConfirmationEmail(
   requesterEmail: string,
   requesterName: string,
@@ -568,7 +563,6 @@ export async function sendLeaveRequestSubmissionConfirmationEmail(
   });
 }
 
->>>>>>> e556ec4 (Add Neo Matekane demo member)
 export async function sendLeaveRequestDecisionEmail(
   requesterEmail: string,
   requesterName: string,

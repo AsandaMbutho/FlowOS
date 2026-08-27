@@ -35,6 +35,7 @@ const projectColors: Record<string, string> = {
   cybersafe: "bg-red-100 text-red-700",
   elearning: "bg-blue-100 text-blue-700",
   crm: "bg-purple-100 text-purple-700",
+  uncategorized: "bg-slate-100 text-slate-600",
 };
 
 const typeColors: Record<string, string> = {
@@ -56,7 +57,14 @@ export default function DocumentsPage() {
   const [uploadProject, setUploadProject] = useState("flowos");
   const [uploadWorkflowId, setUploadWorkflowId] = useState("");
 
-  const projects = ["all", "flowos", "cybersafe", "elearning", "crm"];
+  const projects = [
+    "all",
+    "flowos",
+    "cybersafe",
+    "elearning",
+    "crm",
+    "uncategorized",
+  ];
 
   const fetchDocuments = async () => {
     try {

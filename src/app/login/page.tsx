@@ -34,37 +34,37 @@ export default function LoginPage() {
   // Quick login buttons for demo - all use password123.
   const demoLogins = [
     {
-      name: "Themba (Supervisor)",
+      name: "Themba  Netshifira(Supervisor)",
       email: "netshifirathemba0@gmail.com",
       password: "password123",
       role: "MANAGER",
     },
     {
-      name: "Asanda (Developer)",
+      name: "Asanda Mbutho (Developer)",
       email: "asandambutho@icloud.com",
       password: "password123",
       role: "USER",
     },
     {
-      name: "Sizwe (Developer)",
+      name: "Sizwe Yende (Developer)",
       email: "sizweschaba723@gmail.com",
       password: "password123",
       role: "USER",
     },
     {
-      name: "Ridwaan (Developer)",
+      name: "Ridwaan Sailie (Developer)",
       email: "sridwaan0@gmail.com",
       password: "password123",
       role: "USER",
     },
     {
-      name: "Lutendo Matshidze",
-      email: "lupreshire@gmail.com",
+      name: "Lutendo Matshidze (Developer)",
+      email: "lupreshie@gmail.com",
       password: "password123",
       role: "USER",
     },
     {
-      name: "Matlhodi Moila",
+      name: "Matlhodi Moila (Developer)",
       email: "moilamatlhodi707@gmail.com",
       password: "password123",
       role: "USER",

@@ -40,10 +40,10 @@ export default function LoginPage() {
       role: "MANAGER",
     },
     {
-      name: "Asanda Mbutho (Developer)",
+      name: "Asanda Mbutho (Supervisor)",
       email: "asandambutho@icloud.com",
       password: "password123",
-      role: "USER",
+      role: "Supervisor",
     },
     {
       name: "Sizwe Yende (Developer)",

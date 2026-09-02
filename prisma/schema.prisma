@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   ADMIN
   MANAGER
+  SUPERVISOR
   USER
 }
 
@@ -61,6 +62,7 @@ model User {
   avatar   String?
   password String?
   role     Role    @default(USER)
+  team     String?
 
   workflows     Workflow[]       @relation("UserWorkflows")
   assignedTasks Task[]           @relation("UserTasks")

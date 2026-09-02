@@ -35,7 +35,17 @@ const projectColors: Record<string, string> = {
   cybersafe: "bg-red-100 text-red-700",
   elearning: "bg-blue-100 text-blue-700",
   crm: "bg-purple-100 text-purple-700",
+  medtrack: "bg-cyan-100 text-cyan-700",
   uncategorized: "bg-slate-100 text-slate-600",
+};
+
+const projectLabels: Record<string, string> = {
+  flowos: "Flowos",
+  cybersafe: "Cybersafe",
+  elearning: "Elearning",
+  crm: "Crm",
+  medtrack: "MedTrack",
+  uncategorized: "Uncategorized",
 };
 
 const typeColors: Record<string, string> = {
@@ -63,6 +73,7 @@ export default function DocumentsPage() {
     "cybersafe",
     "elearning",
     "crm",
+    "medtrack",
     "uncategorized",
   ];
 
@@ -197,7 +208,7 @@ export default function DocumentsPage() {
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              {p === "all" ? "All" : p.charAt(0).toUpperCase() + p.slice(1)}
+              {p === "all" ? "All" : projectLabels[p] || p}
             </button>
           ))}
         </div>
@@ -252,7 +263,7 @@ export default function DocumentsPage() {
                 <span
                   className={`text-xs px-2 py-0.5 rounded ${projectColors[doc.project] || "bg-muted"}`}
                 >
-                  {doc.project.charAt(0).toUpperCase() + doc.project.slice(1)}
+                  {projectLabels[doc.project] || doc.project}
                 </span>
                 {doc.workflow && (
                   <span className="text-xs text-muted-foreground truncate max-w-[80px]">
@@ -322,19 +333,21 @@ export default function DocumentsPage() {
                   Project
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {["flowos", "cybersafe", "elearning", "crm"].map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setUploadProject(p)}
-                      className={`px-3 py-1.5 text-xs rounded-full border transition ${
-                        uploadProject === p
-                          ? "bg-[#0f1f3d] text-white border-[#0f1f3d]"
-                          : "bg-card text-muted-foreground border-border hover:border-muted-foreground"
-                      }`}
-                    >
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
-                    </button>
-                  ))}
+                  {["flowos", "cybersafe", "elearning", "crm", "medtrack"].map(
+                    (p) => (
+                      <button
+                        key={p}
+                        onClick={() => setUploadProject(p)}
+                        className={`px-3 py-1.5 text-xs rounded-full border transition ${
+                          uploadProject === p
+                            ? "bg-[#0f1f3d] text-white border-[#0f1f3d]"
+                            : "bg-card text-muted-foreground border-border hover:border-muted-foreground"
+                        }`}
+                      >
+                        {projectLabels[p] || p}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Priority, Stage } from "@prisma/client";
+import { sendWorkflowLoadedNotification } from "@/lib/email-notifications";
 
 // GET /api/workflows — fetch all workflows with assignee and files
 export async function GET(request: Request) {
@@ -21,6 +22,17 @@ export async function GET(request: Request) {
       include: {
         assignee: { select: { id: true, name: true, email: true, role: true } },
         tasks: { select: { id: true, completed: true } },
+        activities: {
+          where: {
+            OR: [
+              { action: "assigned" },
+              { action: "created" },
+            ],
+          },
+          select: { action: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
         files: {
           // 👈 ADD THIS: include files
           select: {
@@ -61,7 +73,15 @@ export async function GET(request: Request) {
             color: "from-gray-400 to-gray-500",
           },
       dueDate: formatDueDate(w.dueDate, w.progress, w.completedAt),
+      dueDateIso: w.dueDate ? w.dueDate.toISOString() : null,
       completedAt: w.completedAt ? w.completedAt.toISOString() : null,
+      createdAt: w.createdAt.toISOString(),
+      assignedDateIso:
+        w.assignee && w.activities[0]
+          ? w.activities[0].createdAt.toISOString()
+          : w.assignee
+            ? w.createdAt.toISOString()
+            : null,
       files: w.files.map((f) => ({
         // 👈 ADD THIS: shape the files data
         id: f.id,
@@ -147,6 +167,8 @@ export async function POST(request: Request) {
       });
     }
 
+    await sendWorkflowLoadedNotification(workflow.id);
+
     return NextResponse.json(
       {
         id: workflow.id,
@@ -175,6 +197,11 @@ export async function POST(request: Request) {
           workflow.progress,
           workflow.completedAt,
         ),
+        dueDateIso: workflow.dueDate ? workflow.dueDate.toISOString() : null,
+        createdAt: workflow.createdAt.toISOString(),
+        assignedDateIso: workflow.assignee
+          ? workflow.createdAt.toISOString()
+          : null,
         files: workflow.files.map((f) => ({
           id: f.id,
           filename: f.filename,
@@ -258,7 +285,10 @@ function assigneeColor(name: string): string {
     Asanda: "from-purple-500 to-pink-500",
     Sizwe: "from-green-500 to-teal-500",
     Themba: "from-blue-500 to-cyan-500",
-    Shravan: "from-orange-500 to-red-500",
+    Ridwaan: "from-orange-500 to-red-500",
+    Lutendo: "from-indigo-500 to-blue-500",
+    Matlhodi: "from-rose-500 to-pink-500",
+    "Neo Matekane": "from-amber-500 to-cyan-500",
   };
   return colors[name] ?? "from-gray-400 to-gray-500";
 }

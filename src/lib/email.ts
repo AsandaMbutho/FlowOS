@@ -199,6 +199,150 @@ export const emailTemplates = {
     `,
     text: `Task completed: "${taskTitle}" in "${workflowTitle}" by ${completedBy}. View at: ${process.env.NEXT_PUBLIC_APP_URL}/workflows/${workflowId}`,
   }),
+
+  supervisorCommentUpdate: (
+    supervisorName: string,
+    authorName: string,
+    workflowTitle: string,
+    comment: string,
+    workflowId: string,
+  ) => ({
+    subject: `New workflow update: "${workflowTitle}"`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #0f1f3d; padding: 20px; text-align: center;">
+          <h1 style="color: #10b981; margin: 0;">FlowOS</h1>
+        </div>
+        <div style="padding: 20px; background-color: #ffffff;">
+          <h2 style="color: #0f1f3d;">Workflow Update</h2>
+          <p>Hello <strong>${supervisorName}</strong>,</p>
+          <p><strong>${authorName}</strong> posted an update on this workflow:</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <h3 style="color: #0f1f3d; margin: 0 0 10px 0;">${workflowTitle}</h3>
+            <p style="margin: 0;">"${comment}"</p>
+          </div>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/workflows/${workflowId}" 
+             style="display: inline-block; background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+            View Workflow
+          </a>
+        </div>
+        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280;">
+          <p>You're receiving this because supervisors get workflow comment updates.</p>
+          <p>© 2026 Media on Africa</p>
+        </div>
+      </div>
+    `,
+    text: `${authorName} posted an update on "${workflowTitle}": "${comment}". View it at: ${process.env.NEXT_PUBLIC_APP_URL}/workflows/${workflowId}`,
+  }),
+
+  leaveRequestSubmitted: (
+    supervisorName: string,
+    requesterName: string,
+    leaveType: string,
+    startDate: Date,
+    endDate: Date,
+    reason: string,
+  ) => ({
+    subject: `Leave request pending: ${requesterName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #0f1f3d; padding: 20px; text-align: center;">
+          <h1 style="color: #10b981; margin: 0;">FlowOS</h1>
+        </div>
+        <div style="padding: 20px; background-color: #ffffff;">
+          <h2 style="color: #0f1f3d;">Leave Request Pending</h2>
+          <p>Hello <strong>${supervisorName}</strong>,</p>
+          <p><strong>${requesterName}</strong> submitted a leave request for review.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p><strong>Type:</strong> ${leaveType}</p>
+            <p><strong>Dates:</strong> ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+            <p><strong>Reason:</strong> ${reason}</p>
+          </div>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/leave" 
+             style="display: inline-block; background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+            Review Request
+          </a>
+        </div>
+        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280;">
+          <p>You're receiving this because supervisors review leave requests.</p>
+          <p>© 2026 Media on Africa</p>
+        </div>
+      </div>
+    `,
+    text: `${requesterName} submitted a ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}. Reason: ${reason}. Review it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
+  }),
+
+  leaveRequestSubmissionConfirmation: (
+    requesterName: string,
+    leaveType: string,
+    startDate: Date,
+    endDate: Date,
+    reason: string,
+  ) => ({
+    subject: `Leave request submitted successfully: ${leaveType}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #0f1f3d; padding: 20px; text-align: center;">
+          <h1 style="color: #10b981; margin: 0;">FlowOS</h1>
+        </div>
+        <div style="padding: 20px; background-color: #ffffff;">
+          <h2 style="color: #0f1f3d;">Leave Request Submitted</h2>
+          <p>Hello <strong>${requesterName}</strong>,</p>
+          <p>Your leave request has been submitted successfully and is pending supervisor review.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p><strong>Type:</strong> ${leaveType}</p>
+            <p><strong>Dates:</strong> ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+            <p><strong>Reason:</strong> ${reason}</p>
+          </div>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/leave" 
+             style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-top: 10px;">
+            View Leave Request
+          </a>
+          <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+            You will receive another email when your supervisor approves or rejects this request.
+          </p>
+        </div>
+      </div>
+    `,
+    text: `Hello ${requesterName}, your ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()} has been submitted successfully and is pending supervisor review. Reason: ${reason}. View it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
+  }),
+
+  leaveRequestDecision: (
+    requesterName: string,
+    leaveType: string,
+    startDate: Date,
+    endDate: Date,
+    status: string,
+    reviewerName: string,
+    managerNote?: string | null,
+  ) => ({
+    subject: `Leave request ${status.toLowerCase()}: ${leaveType}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #0f1f3d; padding: 20px; text-align: center;">
+          <h1 style="color: #10b981; margin: 0;">FlowOS</h1>
+        </div>
+        <div style="padding: 20px; background-color: #ffffff;">
+          <h2 style="color: #0f1f3d;">Leave Request ${status}</h2>
+          <p>Hello <strong>${requesterName}</strong>,</p>
+          <p><strong>${reviewerName}</strong> has ${status.toLowerCase()} your leave request.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p><strong>Type:</strong> ${leaveType}</p>
+            <p><strong>Dates:</strong> ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+            ${managerNote ? `<p><strong>Supervisor note:</strong> ${managerNote}</p>` : ""}
+          </div>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/leave" 
+             style="display: inline-block; background-color: #10b981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">
+            View Leave
+          </a>
+        </div>
+        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280;">
+          <p>© 2026 Media on Africa</p>
+        </div>
+      </div>
+    `,
+    text: `Hello ${requesterName}, ${reviewerName} has ${status.toLowerCase()} your ${leaveType} leave request from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}.${managerNote ? ` Note: ${managerNote}` : ""} View it at: ${process.env.NEXT_PUBLIC_APP_URL}/leave`,
+  }),
 };
 
 // Main email sending function with Vercel compatibility
@@ -342,6 +486,104 @@ export async function sendTaskCompletedEmail(
   );
   return sendEmail({
     to: recipientEmail,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
+}
+
+export async function sendSupervisorCommentUpdateEmail(
+  supervisorEmail: string,
+  supervisorName: string,
+  authorName: string,
+  workflowTitle: string,
+  comment: string,
+  workflowId: string,
+) {
+  const template = emailTemplates.supervisorCommentUpdate(
+    supervisorName,
+    authorName,
+    workflowTitle,
+    comment,
+    workflowId,
+  );
+  return sendEmail({
+    to: supervisorEmail,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
+}
+
+export async function sendLeaveRequestSubmittedEmail(
+  supervisorEmail: string,
+  supervisorName: string,
+  requesterName: string,
+  leaveType: string,
+  startDate: Date,
+  endDate: Date,
+  reason: string,
+) {
+  const template = emailTemplates.leaveRequestSubmitted(
+    supervisorName,
+    requesterName,
+    leaveType,
+    startDate,
+    endDate,
+    reason,
+  );
+  return sendEmail({
+    to: supervisorEmail,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
+}
+
+export async function sendLeaveRequestSubmissionConfirmationEmail(
+  requesterEmail: string,
+  requesterName: string,
+  leaveType: string,
+  startDate: Date,
+  endDate: Date,
+  reason: string,
+) {
+  const template = emailTemplates.leaveRequestSubmissionConfirmation(
+    requesterName,
+    leaveType,
+    startDate,
+    endDate,
+    reason,
+  );
+  return sendEmail({
+    to: requesterEmail,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
+}
+
+export async function sendLeaveRequestDecisionEmail(
+  requesterEmail: string,
+  requesterName: string,
+  leaveType: string,
+  startDate: Date,
+  endDate: Date,
+  status: string,
+  reviewerName: string,
+  managerNote?: string | null,
+) {
+  const template = emailTemplates.leaveRequestDecision(
+    requesterName,
+    leaveType,
+    startDate,
+    endDate,
+    status,
+    reviewerName,
+    managerNote,
+  );
+  return sendEmail({
+    to: requesterEmail,
     subject: template.subject,
     html: template.html,
     text: template.text,

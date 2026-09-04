@@ -12,26 +12,46 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        console.log("=== LOGIN ATTEMPT ===");
+        console.log("Raw credentials:", JSON.stringify(credentials));
+
+        const email = credentials?.email?.trim().toLowerCase();
+        const password = credentials?.password?.trim();
+
+        console.log("Normalized email:", JSON.stringify(email));
+        console.log("Password length:", password?.length);
+
+        if (!email || !password) {
+          console.log("FAILED: missing email or password");
           throw new Error("Invalid credentials");
         }
 
         const user = await db.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
 
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials");
-        }
-
-        const isCorrectPassword = await bcrypt.compare(
-          credentials.password,
-          user.password,
+        console.log(
+          "USER FOUND:",
+          user ? `${user.id} (${user.email})` : "NONE",
         );
 
-        if (!isCorrectPassword) {
+        if (!user || !user.password) {
+          console.log("FAILED: no user or no password field on user");
           throw new Error("Invalid credentials");
         }
+
+        console.log("Stored hash:", user.password);
+
+        const isCorrectPassword = await bcrypt.compare(password, user.password);
+
+        console.log("PASSWORD MATCH:", isCorrectPassword);
+
+        if (!isCorrectPassword) {
+          console.log("FAILED: password mismatch");
+          throw new Error("Invalid credentials");
+        }
+
+        console.log("LOGIN SUCCESS:", user.email);
 
         return {
           id: user.id,

@@ -45,6 +45,15 @@ export async function POST(
       workflowId: id,
     });
 
+    await db.activity.create({
+      data: {
+        action: "assigned",
+        details: `Assigned workflow to ${assignee?.name ?? "team member"}`,
+        userId: assigneeId,
+        workflowId: id,
+      },
+    });
+
     // Send email notification
     if (assignee?.email) {
       const emailResult = await triggerAssignmentEmail(

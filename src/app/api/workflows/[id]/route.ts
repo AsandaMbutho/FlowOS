@@ -147,9 +147,12 @@ export async function PATCH(
       include: { assignee: { select: { id: true, name: true } } },
     });
 
-    const assignee = assigneeName
-      ? await db.user.findFirst({ where: { name: assigneeName } })
-      : undefined;
+    const assignee =
+      assigneeName === null || assigneeName === ""
+        ? null
+        : assigneeName
+          ? await db.user.findFirst({ where: { name: assigneeName } })
+          : undefined;
 
     let fixedDueDate = undefined;
     if (dueDate !== undefined) {
@@ -236,6 +239,15 @@ export async function PATCH(
         message: `"${updated.title}" has been assigned to ${assignee.name}`,
         userId: assignee.id,
         workflowId: id,
+      });
+
+      await db.activity.create({
+        data: {
+          action: "assigned",
+          details: `Assigned workflow to ${assignee.name}`,
+          workflowId: id,
+          userId: assignee.id,
+        },
       });
     }
 

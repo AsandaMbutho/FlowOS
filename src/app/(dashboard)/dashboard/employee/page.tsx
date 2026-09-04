@@ -76,7 +76,7 @@ export default function EmployeeDashboard() {
       case "BLOCKED":
         return "text-red-600 bg-red-100";
       default:
-        return "text-gray-600 bg-gray-100";
+        return "text-muted-foreground bg-muted";
     }
   };
 
@@ -87,7 +87,7 @@ export default function EmployeeDashboard() {
       case "MEDIUM":
         return "text-yellow-600";
       default:
-        return "text-gray-600";
+        return "text-muted-foreground";
     }
   };
 
@@ -97,7 +97,7 @@ export default function EmployeeDashboard() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+          <p className="mt-4 text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -108,30 +108,30 @@ export default function EmployeeDashboard() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <p className="text-gray-600">Please log in to view your dashboard.</p>
+          <p className="text-muted-foreground">Please log in to view your dashboard.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6 overflow-x-hidden">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           Welcome back, {session?.user?.name || "User"}!
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-muted-foreground mt-1">
           Here's what's happening with your work and your team.
         </p>
       </div>
 
       {/* My Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">My Workflows</p>
+              <p className="text-sm text-muted-foreground">My Workflows</p>
               <p className="text-2xl font-bold mt-1">
                 {data?.myStats.total || 0}
               </p>
@@ -142,10 +142,10 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Completed</p>
+              <p className="text-sm text-muted-foreground">Completed</p>
               <p className="text-2xl font-bold mt-1 text-green-600">
                 {data?.myStats.completed || 0}
               </p>
@@ -156,10 +156,10 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">In Progress</p>
+              <p className="text-sm text-muted-foreground">In Progress</p>
               <p className="text-2xl font-bold mt-1 text-blue-600">
                 {data?.myStats.inProgress || 0}
               </p>
@@ -172,7 +172,7 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* My Workflows Section */}
-      <div className="bg-white rounded-lg shadow mb-8">
+      <div className="bg-card rounded-lg shadow mb-8">
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold flex items-center">
@@ -192,32 +192,34 @@ export default function EmployeeDashboard() {
             <Link
               key={workflow.id}
               href={`/workflows/${workflow.id}`}
-              className="block p-4 hover:bg-gray-50 transition-colors"
+              className="block p-4"
             >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-gray-900">{workflow.title}</h3>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2 min-w-0">
+                <h3 className="font-medium text-foreground truncate">
+                  {workflow.title}
+                </h3>
                 <span
                   className={`text-xs px-2 py-1 rounded-full ${getStageColor(workflow.stage)}`}
                 >
                   {workflow.stage.replace("_", " ")}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-4">
                   <span
                     className={`flex items-center gap-1 ${getPriorityColor(workflow.priority)}`}
                   >
                     <AlertCircle className="h-3 w-3" />
                     {workflow.priority}
                   </span>
-                  <span className="flex items-center gap-1 text-gray-500">
+                  <span className="flex items-center gap-1 text-muted-foreground">
                     <Calendar className="h-3 w-3" />
                     Due: {new Date(workflow.dueDate).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Progress:</span>
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
+                  <span className="text-sm text-muted-foreground">Progress:</span>
+                  <div className="w-24 bg-muted rounded-full h-2">
                     <div
                       className="bg-teal-600 h-2 rounded-full transition-all"
                       style={{ width: `${workflow.progress}%` }}
@@ -231,7 +233,7 @@ export default function EmployeeDashboard() {
             </Link>
           ))}
           {(!data?.myWorkflows || data.myWorkflows.length === 0) && (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-muted-foreground">
               No active workflows assigned to you.
             </div>
           )}
@@ -239,13 +241,13 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Team Workflows Section */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-card rounded-lg shadow">
         <div className="p-6 border-b">
           <h2 className="text-lg font-semibold flex items-center">
             <Users className="h-5 w-5 mr-2 text-teal-600" />
             Team Workflows
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             See what your colleagues are working on
           </p>
         </div>
@@ -254,14 +256,14 @@ export default function EmployeeDashboard() {
             <Link
               key={workflow.id}
               href={`/workflows/${workflow.id}`}
-              className="block p-4 hover:bg-gray-50 transition-colors"
+              className="block p-4"
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-medium text-gray-900">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2 min-w-0">
+                <div className="flex flex-wrap items-center gap-3 min-w-0">
+                  <h3 className="font-medium text-foreground">
                     {workflow.title}
                   </h3>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     by {workflow.assigneeName}
                   </span>
                 </div>
@@ -272,8 +274,8 @@ export default function EmployeeDashboard() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Progress:</span>
-                <div className="flex-1 max-w-xs bg-gray-200 rounded-full h-2">
+                <span className="text-sm text-muted-foreground">Progress:</span>
+                <div className="flex-1 max-w-xs bg-muted rounded-full h-2">
                   <div
                     className="bg-teal-600 h-2 rounded-full transition-all"
                     style={{ width: `${workflow.progress}%` }}
@@ -286,7 +288,7 @@ export default function EmployeeDashboard() {
             </Link>
           ))}
           {(!data?.teamWorkflows || data.teamWorkflows.length === 0) && (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-muted-foreground">
               No team workflows to display.
             </div>
           )}

@@ -5,6 +5,10 @@ import {
   sendStatusChangeEmail,
   sendAssignmentEmail,
   sendTaskCompletedEmail,
+  sendSupervisorCommentUpdateEmail,
+  sendLeaveRequestSubmittedEmail,
+  sendLeaveRequestSubmissionConfirmationEmail,
+  sendLeaveRequestDecisionEmail,
 } from "./email";
 
 // Get user email by ID
@@ -169,6 +173,202 @@ export async function sendMentionNotifications(commentId: string) {
   }
 }
 
+// Send every workflow comment to supervisors so they get continuous updates.
+export async function sendSupervisorCommentNotifications(commentId: string) {
+  try {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        author: true,
+        workflow: true,
+      },
+    });
+
+    if (!comment) return { error: "Comment not found" };
+
+    const supervisors = await prisma.user.findMany({
+      where: {
+        role: { in: ["MANAGER", "ADMIN"] },
+        email: { not: "" },
+        id: { not: comment.authorId ?? undefined },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    const results = [];
+
+    for (const supervisor of supervisors) {
+      if (!supervisor.email) continue;
+
+      const emailResult = await sendSupervisorCommentUpdateEmail(
+        supervisor.email,
+        supervisor.name || "Supervisor",
+        comment.author?.name || "Someone",
+        comment.workflow.title,
+        comment.body,
+        comment.workflow.id,
+      );
+
+      results.push({
+        userId: supervisor.id,
+        email: supervisor.email,
+        emailSent: emailResult.success,
+        error: emailResult.error,
+      });
+    }
+
+    return { success: true, processed: results.length, results };
+  } catch (error) {
+    console.error("Error sending supervisor comment notifications:", error);
+    return { error };
+  }
+}
+
+export async function sendLeaveRequestSubmittedNotifications(
+  leaveRequestId: string,
+) {
+  try {
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: leaveRequestId },
+      include: { user: true },
+    });
+
+    if (!leaveRequest) return { error: "Leave request not found" };
+
+    let requesterEmailResult:
+      | Awaited<ReturnType<typeof sendLeaveRequestSubmissionConfirmationEmail>>
+      | undefined;
+
+    if (leaveRequest.user.email) {
+      requesterEmailResult = await sendLeaveRequestSubmissionConfirmationEmail(
+        leaveRequest.user.email,
+        leaveRequest.user.name || "Team member",
+        leaveRequest.type,
+        leaveRequest.startDate,
+        leaveRequest.endDate,
+        leaveRequest.reason,
+      );
+
+      await prisma.notification.create({
+        data: {
+          type: "ASSIGNED",
+          title: "Leave request submitted",
+          message:
+            "Your leave request was submitted successfully and is pending supervisor review.",
+          userId: leaveRequest.user.id,
+          emailSent: requesterEmailResult.success,
+          emailError: requesterEmailResult.success
+            ? null
+            : String(requesterEmailResult.error),
+          emailSentAt: requesterEmailResult.success ? new Date() : null,
+        },
+      });
+    }
+
+    const supervisors = await prisma.user.findMany({
+      where: {
+        role: { in: ["MANAGER", "ADMIN"] },
+        email: { not: "" },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    const results = [];
+
+    for (const supervisor of supervisors) {
+      if (!supervisor.email) continue;
+
+      const emailResult = await sendLeaveRequestSubmittedEmail(
+        supervisor.email,
+        supervisor.name || "Supervisor",
+        leaveRequest.user.name || "Team member",
+        leaveRequest.type,
+        leaveRequest.startDate,
+        leaveRequest.endDate,
+        leaveRequest.reason,
+      );
+
+      results.push({
+        userId: supervisor.id,
+        email: supervisor.email,
+        emailSent: emailResult.success,
+        error: emailResult.error,
+      });
+    }
+
+    return {
+      success: true,
+      requesterEmailSent: requesterEmailResult?.success ?? false,
+      processed: results.length,
+      results,
+    };
+  } catch (error) {
+    console.error("Error sending leave request notifications:", error);
+    return { error };
+  }
+}
+
+export async function sendLeaveRequestDecisionNotification(
+  leaveRequestId: string,
+) {
+  try {
+    const leaveRequest = await prisma.leaveRequest.findUnique({
+      where: { id: leaveRequestId },
+      include: {
+        user: true,
+        reviewer: true,
+      },
+    });
+
+    if (!leaveRequest) return { error: "Leave request not found" };
+    if (!leaveRequest.user.email) {
+      return { error: "Requester has no email address" };
+    }
+
+    const emailResult = await sendLeaveRequestDecisionEmail(
+      leaveRequest.user.email,
+      leaveRequest.user.name || "Team member",
+      leaveRequest.type,
+      leaveRequest.startDate,
+      leaveRequest.endDate,
+      leaveRequest.status,
+      leaveRequest.reviewer?.name || "Your supervisor",
+      leaveRequest.managerNote,
+    );
+
+    await prisma.notification.create({
+      data: {
+        type: "STATUS_CHANGE",
+        title: `Leave request ${leaveRequest.status.toLowerCase()}`,
+        message: `Your ${leaveRequest.type.toLowerCase()} leave request from ${leaveRequest.startDate.toLocaleDateString()} to ${leaveRequest.endDate.toLocaleDateString()} was ${leaveRequest.status.toLowerCase()} by ${leaveRequest.reviewer?.name || "your supervisor"}.`,
+        userId: leaveRequest.user.id,
+        emailSent: emailResult.success,
+        emailError: emailResult.success ? null : String(emailResult.error),
+        emailSentAt: emailResult.success ? new Date() : null,
+      },
+    });
+
+    return {
+      success: true,
+      userId: leaveRequest.user.id,
+      email: leaveRequest.user.email,
+      emailSent: emailResult.success,
+      error: emailResult.error,
+    };
+  } catch (error) {
+    console.error("Error sending leave decision notification:", error);
+    return { error };
+  }
+}
+
 // Send notification for workflow assignment
 export async function sendAssignmentNotification(
   workflowId: string,
@@ -212,6 +412,66 @@ export async function sendAssignmentNotification(
     return { success: true, emailSent: emailResult.success };
   } catch (error) {
     console.error("Error sending assignment notification:", error);
+    return { error };
+  }
+}
+
+// Send notification when a workflow is created.
+// A null assigneeId means the workflow was assigned to "Everyone" in the UI.
+export async function sendWorkflowLoadedNotification(workflowId: string) {
+  try {
+    const workflow = await prisma.workflow.findUnique({
+      where: { id: workflowId },
+      include: {
+        assignee: true,
+      },
+    });
+
+    if (!workflow) return { error: "Workflow not found" };
+
+    const recipients = workflow.assignee
+      ? [workflow.assignee]
+      : await prisma.user.findMany();
+
+    const results = [];
+
+    for (const user of recipients) {
+      if (!user.email) continue;
+
+      const emailResult = await sendAssignmentEmail(
+        user.email,
+        user.name || "Team member",
+        workflow.title,
+        "FlowOS",
+        workflow.id,
+      );
+
+      await prisma.notification.create({
+        data: {
+          type: "ASSIGNED",
+          title: `New workflow: ${workflow.title}`,
+          message: workflow.assigneeId
+            ? `You have been assigned to this workflow`
+            : `A new workflow has been assigned to everyone`,
+          userId: user.id,
+          workflowId: workflow.id,
+          emailSent: emailResult.success,
+          emailError: emailResult.success ? null : String(emailResult.error),
+          emailSentAt: emailResult.success ? new Date() : null,
+        },
+      });
+
+      results.push({
+        userId: user.id,
+        email: user.email,
+        emailSent: emailResult.success,
+        error: emailResult.error,
+      });
+    }
+
+    return { success: true, processed: results.length, results };
+  } catch (error) {
+    console.error("Error sending workflow loaded notification:", error);
     return { error };
   }
 }

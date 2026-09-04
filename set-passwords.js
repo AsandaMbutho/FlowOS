@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const db = new PrismaClient();
 
 // ── Set each person's password here ──────────────────────────────────────────
+
 const PASSWORDS = {
   "themba@mediaonafrica.co.za": "Themba@2026",
   "asanda@mediaonafrica.co.za": "Asanda@2026",

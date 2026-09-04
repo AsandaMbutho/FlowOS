@@ -34,7 +34,7 @@ const defaultTeam: TeamMember[] = [
   {
     id: "1",
     name: "Themba",
-    email: "themba@mediaonafrica.co.za",
+    email: "netshifirathemba0@gmail.com",
     role: "Supervisor",
     status: "Active",
     initials: "T",
@@ -47,7 +47,7 @@ const defaultTeam: TeamMember[] = [
   {
     id: "2",
     name: "Asanda",
-    email: "asanda@mediaonafrica.co.za",
+    email: "asandambutho@icloud.com",
     role: "Developer",
     status: "Active",
     initials: "A",
@@ -60,7 +60,7 @@ const defaultTeam: TeamMember[] = [
   {
     id: "3",
     name: "Sizwe",
-    email: "sizwe@mediaonafrica.co.za",
+    email: "sizweschaba723@gmail.com",
     role: "Developer",
     status: "Active",
     initials: "S",
@@ -70,12 +70,64 @@ const defaultTeam: TeamMember[] = [
     completedWorkflows: 0,
     avgProgress: 0,
   },
+  {
+    id: "4",
+    name: "Ridwaan",
+    email: "sridwaan0@gmail.com",
+    role: "Developer",
+    status: "Active",
+    initials: "R",
+    color: "from-orange-500 to-red-600",
+    badge: "Developer",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+  {
+    id: "5",
+    name: "Matlhodi",
+    email: "moilamatlhodi707@gmail.com",
+    role: "Developer",
+    status: "Active",
+    initials: "M",
+    color: "from-rose-500 to-pink-600",
+    badge: "Developer",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+  {
+    id: "6",
+    name: "Lutendo",
+    email: "lupreshire@gmail.com",
+    role: "Developer",
+    status: "Active",
+    initials: "L",
+    color: "from-indigo-500 to-blue-600",
+    badge: "Developer",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
+  {
+    id: "7",
+    name: "Neo Matekane",
+    email: "neomate03@gmail.com",
+    role: "Data Analyst",
+    status: "Active",
+    initials: "NM",
+    color: "from-amber-500 to-cyan-600",
+    badge: "Data Analyst",
+    workflowCount: 0,
+    completedWorkflows: 0,
+    avgProgress: 0,
+  },
 ];
 
 const statusColors: Record<string, string> = {
   Active: "bg-emerald-100 text-emerald-700 border-emerald-200",
   Away: "bg-amber-100 text-amber-700 border-amber-200",
-  Inactive: "bg-gray-100 text-gray-600 border-gray-200",
+  Inactive: "bg-muted text-muted-foreground border-border",
 };
 
 const roleBadgeColors: Record<string, string> = {
@@ -83,6 +135,8 @@ const roleBadgeColors: Record<string, string> = {
     "bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-700 border-indigo-200",
   Developer:
     "bg-gradient-to-r from-teal-100 to-emerald-100 text-emerald-700 border-emerald-200",
+  "Data Analyst":
+    "bg-gradient-to-r from-amber-100 to-cyan-100 text-cyan-800 border-cyan-200",
 };
 
 export default function TeamPage() {
@@ -149,7 +203,7 @@ export default function TeamPage() {
 
   const totalActive = team.filter((m) => m.status === "Active").length;
   const totalSupervisors = team.filter((m) => m.badge === "Supervisor").length;
-  const totalDevelopers = team.filter((m) => m.badge === "Developer").length;
+  const totalMembers = team.filter((m) => m.badge !== "Supervisor").length;
   const overallAvg =
     team.filter((m) => m.workflowCount > 0).length > 0
       ? Math.round(
@@ -181,7 +235,7 @@ export default function TeamPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search team..."
           className="pl-9"
@@ -194,7 +248,7 @@ export default function TeamPage() {
         {filtered.map((member) => (
           <Card
             key={member.id}
-            className="p-5 hover:shadow-lg transition-all duration-200 border border-gray-100 hover:border-gray-200 group"
+            className="p-5 hover:shadow-lg transition-all duration-200 border border-border hover:border-accent/40 group"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
@@ -206,14 +260,14 @@ export default function TeamPage() {
                 <div>
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     {member.name}
-                    <span className="text-[10px] font-medium text-gray-400 flex items-center gap-1">
+                    <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
                       {member.status}
                     </span>
                   </h3>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-sm text-gray-500">
+                    <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
                       {member.email}
                     </span>
                   </div>
@@ -221,9 +275,9 @@ export default function TeamPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
               <span
-                className={`text-xs px-3 py-1 rounded-full border font-medium flex items-center gap-1.5 ${roleBadgeColors[member.badge] || "bg-gray-100 text-gray-600 border-gray-200"}`}
+                className={`text-xs px-3 py-1 rounded-full border font-medium flex items-center gap-1.5 ${roleBadgeColors[member.badge] || "bg-muted text-muted-foreground border-border"}`}
               >
                 {member.badge}
               </span>
@@ -234,17 +288,17 @@ export default function TeamPage() {
               </span>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-muted-foreground">
                   Workflow Progress
                 </span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-bold text-foreground">
                   {member.avgProgress}%
                 </span>
               </div>
 
-              <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
+              <div className="w-full bg-muted rounded-full h-2.5 mb-3">
                 <div
                   className={`h-2.5 rounded-full ${getProgressColor(member.avgProgress)} transition-all duration-500`}
                   style={{ width: `${member.avgProgress}%` }}
@@ -252,23 +306,23 @@ export default function TeamPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-2 bg-gray-50 rounded-lg">
-                  <div className="text-sm font-bold text-gray-800">
+                <div className="text-center p-2 bg-muted rounded-lg">
+                  <div className="text-sm font-bold text-foreground">
                     {member.workflowCount}
                   </div>
-                  <div className="text-[10px] text-gray-400">Total</div>
+                  <div className="text-[10px] text-muted-foreground">Total</div>
                 </div>
                 <div className="text-center p-2 bg-emerald-50 rounded-lg">
                   <div className="text-sm font-bold text-emerald-600">
                     {member.completedWorkflows}
                   </div>
-                  <div className="text-[10px] text-gray-400">Done</div>
+                  <div className="text-[10px] text-muted-foreground">Done</div>
                 </div>
                 <div className="text-center p-2 bg-amber-50 rounded-lg">
                   <div className="text-sm font-bold text-amber-600">
                     {member.workflowCount - member.completedWorkflows}
                   </div>
-                  <div className="text-[10px] text-gray-400">Remaining</div>
+                  <div className="text-[10px] text-muted-foreground">Remaining</div>
                 </div>
               </div>
             </div>
@@ -300,8 +354,8 @@ export default function TeamPage() {
             <Code className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <div className="text-xl font-bold">{totalDevelopers}</div>
-            <div className="text-sm text-muted-foreground">Developers</div>
+            <div className="text-xl font-bold">{totalMembers}</div>
+            <div className="text-sm text-muted-foreground">Members</div>
           </div>
         </div>
         <div className="card-depth p-4 flex items-center gap-3">

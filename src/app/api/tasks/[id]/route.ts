@@ -12,9 +12,12 @@ export async function PATCH(
     const { completed, assigneeName } = await request.json();
 
     // Resolve assignee if provided
-    const assignee = assigneeName
-      ? await db.user.findFirst({ where: { name: assigneeName } })
-      : undefined;
+    const assignee =
+      assigneeName === null || assigneeName === ""
+        ? null
+        : assigneeName
+          ? await db.user.findFirst({ where: { name: assigneeName } })
+          : undefined;
 
     const task = await db.task.update({
       where: { id },

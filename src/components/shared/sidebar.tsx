@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -30,6 +31,8 @@ import {
   Smartphone,
   Lightbulb,
   Briefcase,
+  Bot,
+  CalendarCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +70,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Smartphone,
   Lightbulb,
   Briefcase,
+  Bot,
+  CalendarCheck,
 };
 
 const DEFAULT_TABS: Tab[] = [
@@ -126,6 +131,12 @@ const DEFAULT_TABS: Tab[] = [
         iconName: "Folder",
         href: "/documents?project=crm",
       },
+      {
+        id: "doc-medtrack",
+        label: "MedTrack",
+        iconName: "Folder",
+        href: "/documents?project=medtrack",
+      },
     ],
   },
   {
@@ -157,6 +168,12 @@ const DEFAULT_TABS: Tab[] = [
         label: "CRM",
         iconName: "Package",
         href: "/products/crm",
+      },
+      {
+        id: "prod-medtrack",
+        label: "MedTrack",
+        iconName: "Package",
+        href: "/products/medtrack",
       },
     ],
   },
@@ -202,7 +219,31 @@ const DEFAULT_TABS: Tab[] = [
         iconName: "Briefcase",
         href: "/services/consulting",
       },
+      {
+        id: "svc-ai",
+        label: "AI Services",
+        iconName: "Bot",
+        href: "/services/ai-services",
+      },
     ],
+  },
+  {
+    id: "ai-assistant",
+    label: "AI Assistant",
+    iconName: "Bot",
+    href: "/ai-assistant",
+  },
+  {
+    id: "leave",
+    label: "Leave Requests",
+    iconName: "CalendarCheck",
+    href: "/leave",
+  },
+  {
+    id: "meetings",
+    label: "Meetings",
+    iconName: "CalendarCheck",
+    href: "/meetings",
   },
   { id: "team", label: "Team", iconName: "UserCircle", href: "/team" },
   {
@@ -221,8 +262,31 @@ const DEFAULT_TABS: Tab[] = [
 
 const TABS_STORAGE_KEY = "flowos-tabs-state";
 
+// Human-friendly labels for the role stored on the user record.
+const ROLE_LABELS: Record<string, string> = {
+  MANAGER: "Supervisor",
+  ADMIN: "Administrator",
+  USER: "Team Member",
+};
+
 export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const displayName = session?.user?.name || session?.user?.email || "Guest";
+  const displayRole = session?.user?.role
+    ? (ROLE_LABELS[session.user.role] ?? session.user.role)
+    : "";
+  const initial = displayName.trim().charAt(0).toUpperCase() || "?";
+
+  const handleLogOut = () => {
+    signOut({ redirect: false }).then(() => {
+      router.push("/login");
+      router.refresh();
+    });
+  };
+
   const [tabs, setTabs] = useState<Tab[]>(DEFAULT_TABS);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -316,7 +380,11 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
     return IconComponent || LayoutDashboard;
   };
 
-  const renderNavItem = (tab: Tab, depth: number = 0) => {
+  const renderNavItem = (
+    tab: Tab,
+    depth: number = 0,
+    closeOnNavigate: boolean = false,
+  ) => {
     const Icon = getIcon(tab.iconName);
     const isActive =
       pathname === tab.href || pathname?.startsWith(tab.href + "/");
@@ -346,7 +414,9 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
           </div>
           {isExpanded && (
             <div className="ml-2 border-l border-white/10 pl-2">
-              {tab.children?.map((child) => renderNavItem(child, depth + 1))}
+              {tab.children?.map((child) =>
+                renderNavItem(child, depth + 1, closeOnNavigate),
+              )}
             </div>
           )}
         </div>
@@ -391,6 +461,9 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
       <Link
         key={tab.id}
         href={tab.href}
+        onClick={() => {
+          if (closeOnNavigate) setSidebarOpen(false);
+        }}
         className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all group relative",
           isActive
@@ -412,93 +485,146 @@ export function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
     );
   };
 
+  const mobileNavigation = (
+    <div className="lg:hidden">
+      {sidebarOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="fixed inset-x-0 bottom-0 top-16 z-30 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside className="custom-scrollbar fixed inset-x-0 top-16 z-40 max-h-[calc(100vh-4rem)] overflow-y-auto bg-[#0f1f3d] border-b border-white/10 px-4 py-4 shadow-2xl">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3 mb-4"
+              aria-label="Go to FlowOS home"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm">
+                F
+              </div>
+              <span className="text-white font-semibold text-lg">
+                Flow<span className="text-[#29d3aa]">OS</span>
+              </span>
+            </Link>
+
+            <nav className="space-y-1">
+              {tabs.map((tab) => renderNavItem(tab, 0, true))}
+            </nav>
+          </aside>
+        </>
+      )}
+    </div>
+  );
+
   if (!sidebarOpen) {
     return (
-      <aside className="fixed left-0 top-0 z-40 h-screen w-16 bg-[#0f1f3d] border-r border-white/5 flex flex-col items-center py-4 transition-all duration-300">
-        <button
-          onClick={toggleSidebar}
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors mb-4"
-          title="Expand sidebar"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+      <>
+        {mobileNavigation}
+        <aside className="fixed left-0 top-0 z-40 hidden h-screen w-16 bg-[#0f1f3d] border-r border-white/5 lg:flex flex-col items-center py-4 transition-all duration-300">
+          <button
+            onClick={toggleSidebar}
+            className="w-10 h-10 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors mb-4"
+            title="Expand sidebar"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
 
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm mb-6">
-          F
-        </div>
+          <Link
+            href="/dashboard"
+            className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm mb-6"
+            aria-label="Go to FlowOS home"
+          >
+            F
+          </Link>
 
-        <nav className="flex-1 w-full space-y-1">
-          {tabs.map((tab) => {
-            const Icon = getIcon(tab.iconName);
-            const isActive =
-              pathname === tab.href || pathname?.startsWith(tab.href + "/");
-            return (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                title={tab.label}
-                className={cn(
-                  "w-full flex items-center justify-center h-10 rounded-lg transition-all relative group",
-                  isActive
-                    ? "bg-gradient-to-r from-[#29d3aa]/20 to-transparent text-[#29d3aa]"
-                    : "text-white/40 hover:text-white hover:bg-white/5",
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="absolute left-full ml-2 px-2 py-1 bg-[#0f1f3d] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10">
-                  {tab.label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+          <nav className="custom-scrollbar flex-1 w-full space-y-1 overflow-y-auto overflow-x-hidden">
+            {tabs.map((tab) => {
+              const Icon = getIcon(tab.iconName);
+              const isActive =
+                pathname === tab.href || pathname?.startsWith(tab.href + "/");
+              return (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  title={tab.label}
+                  className={cn(
+                    "w-full flex items-center justify-center h-10 rounded-lg transition-all relative group",
+                    isActive
+                      ? "bg-gradient-to-r from-[#29d3aa]/20 to-transparent text-[#29d3aa]"
+                      : "text-white/40 hover:text-white hover:bg-white/5",
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="absolute left-full ml-2 px-2 py-1 bg-[#0f1f3d] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10">
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+      </>
     );
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-[#0f1f3d] border-r border-white/5 flex flex-col py-4 transition-all duration-300">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm">
-            F
-          </div>
-          <span className="text-white font-semibold text-lg">
-            Flow<span className="text-[#29d3aa]">OS</span>
-          </span>
+    <>
+      {mobileNavigation}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 bg-[#0f1f3d] border-r border-white/5 lg:flex flex-col py-4 transition-all duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 mb-6">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3"
+            aria-label="Go to FlowOS home"
+          >
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-[#29d3aa] to-[#14a882] flex items-center justify-center text-white font-bold text-sm">
+              F
+            </div>
+            <span className="text-white font-semibold text-lg">
+              Flow<span className="text-[#29d3aa]">OS</span>
+            </span>
+          </Link>
+          <button
+            onClick={toggleSidebar}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+            title="Collapse sidebar"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
         </div>
-        <button
-          onClick={toggleSidebar}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors"
-          title="Collapse sidebar"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-        {tabs.map((tab) => renderNavItem(tab, 0))}
-      </nav>
+        {/* Navigation */}
+        <nav className="custom-scrollbar flex-1 px-3 pr-2 space-y-1 overflow-y-auto overflow-x-hidden">
+          {tabs.map((tab) => renderNavItem(tab, 0))}
+        </nav>
 
-      {/* Footer */}
-      <div className="px-4 pt-4 border-t border-white/5 mt-auto">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#29d3aa] to-[#7c6cff] flex items-center justify-center text-white text-xs font-semibold">
-            A
+        {/* Footer */}
+        <div className="px-4 pt-4 border-t border-white/5 mt-auto">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#29d3aa] to-[#7c6cff] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+              {initial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white font-medium truncate">
+                {displayName}
+              </p>
+              <p className="text-xs text-white/40 truncate">{displayRole}</p>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-[#29d3aa] flex-shrink-0" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-white font-medium truncate">Asanda</p>
-            <p className="text-xs text-white/40 truncate">Team Member</p>
-          </div>
-          <div className="w-2 h-2 rounded-full bg-[#29d3aa] flex-shrink-0" />
+          <button
+            onClick={handleLogOut}
+            className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60 mt-1"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm">Log Out</span>
+          </button>
         </div>
-        <button className="w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors text-white/30 hover:text-white/60 mt-1">
-          <LogOut className="w-4 h-4" />
-          <span className="text-sm">Log Out</span>
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

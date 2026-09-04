@@ -58,6 +58,11 @@ interface SearchResults {
   }[];
 }
 
+interface SearchMenuItem {
+  id: string;
+  href: string;
+}
+
 // ── Colors ──────────────────────────────────────────────────────────────
 // Primary    : #29d3aa (Emerald Green)
 // Secondary  : #7c6cff (Purple)
@@ -131,13 +136,32 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [searching, setSearching] = useState(false);
   const [showDrop, setShowDrop] = useState(false);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSearch = () => {
+    setQuery("");
+    setResults(null);
+    setShowDrop(false);
+    setActiveSearchIndex(-1);
+  };
+
+  const closeSearch = () => {
+    setShowDrop(false);
+    setActiveSearchIndex(-1);
+  };
+
+  const navigate = (href: string) => {
+    clearSearch();
+    router.push(href);
+  };
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) {
       setResults(null);
       setShowDrop(false);
+      setActiveSearchIndex(-1);
       return;
     }
     setSearching(true);
@@ -145,10 +169,14 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       if (!res.ok) throw new Error();
       const data: SearchResults = await res.json();
+      const resultCount =
+        data.workflows.length + data.tasks.length + data.comments.length;
       setResults(data);
       setShowDrop(true);
+      setActiveSearchIndex(resultCount > 0 ? 0 : -1);
     } catch {
       setResults(null);
+      setActiveSearchIndex(-1);
     } finally {
       setSearching(false);
     }
@@ -157,14 +185,63 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     setQuery(v);
+    setActiveSearchIndex(-1);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(v), 300);
   };
 
+  const totalResults = results
+    ? results.workflows.length + results.tasks.length + results.comments.length
+    : 0;
+
+  const searchItems: SearchMenuItem[] = results
+    ? [
+        ...results.workflows.map((w) => ({
+          id: `search-workflow-${w.id}`,
+          href: `/workflows/${w.id}`,
+        })),
+        ...results.tasks.map((t) => ({
+          id: `search-task-${t.id}`,
+          href: `/workflows/${t.workflowId}`,
+        })),
+        ...results.comments.map((c) => ({
+          id: `search-comment-${c.id}`,
+          href: `/workflows/${c.workflowId}`,
+        })),
+      ]
+    : [];
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      setShowDrop(false);
-      setQuery("");
+      closeSearch();
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      if (searchItems.length === 0) return;
+      e.preventDefault();
+      if (!showDrop) setShowDrop(true);
+      setActiveSearchIndex((current) =>
+        current < searchItems.length - 1 ? current + 1 : 0,
+      );
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (searchItems.length === 0) return;
+      e.preventDefault();
+      if (!showDrop) setShowDrop(true);
+      setActiveSearchIndex((current) =>
+        current > 0 ? current - 1 : searchItems.length - 1,
+      );
+      return;
+    }
+
+    if (e.key === "Enter" && showDrop && activeSearchIndex >= 0) {
+      const item = searchItems[activeSearchIndex];
+      if (!item) return;
+      e.preventDefault();
+      navigate(item.href);
     }
   };
 
@@ -174,31 +251,18 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         wrapperRef.current &&
         !wrapperRef.current.contains(e.target as Node)
       ) {
-        setShowDrop(false);
+        closeSearch();
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const clearSearch = () => {
-    setQuery("");
-    setResults(null);
-    setShowDrop(false);
-  };
-
-  const navigate = (href: string) => {
-    clearSearch();
-    router.push(href);
-  };
-
-  const totalResults = results
-    ? results.workflows.length + results.tasks.length + results.comments.length
-    : 0;
-
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });
   };
+
+  let renderedSearchIndex = -1;
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-white/5 bg-[#0f1117]/80 backdrop-blur-xl px-4 md:px-6">
@@ -213,14 +277,18 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </Button>
 
       {/* Logo */}
-      <div className="hidden lg:flex items-center gap-2 shrink-0">
+      <Link
+        href="/dashboard"
+        className="hidden lg:flex items-center gap-2 shrink-0"
+        aria-label="Go to FlowOS home"
+      >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-[#29d3aa] to-[#14a882] text-white font-bold text-sm">
           F
         </div>
         <span className="font-semibold text-lg text-white">
           Flow<span className="text-[#29d3aa]">OS</span>
         </span>
-      </div>
+      </Link>
 
       {/* Search */}
       <div className="flex-1 flex items-center justify-center px-2 md:px-4">
@@ -236,6 +304,14 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             value={query}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            role="combobox"
+            aria-expanded={showDrop}
+            aria-controls="global-search-results"
+            aria-activedescendant={
+              activeSearchIndex >= 0
+                ? searchItems[activeSearchIndex]?.id
+                : undefined
+            }
             onFocus={() => {
               if (query.length >= 2 && results && totalResults > 0)
                 setShowDrop(true);
@@ -252,7 +328,11 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
 
           {/* Search Dropdown */}
           {showDrop && results && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a2e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-[420px] overflow-y-auto backdrop-blur-xl">
+            <div
+              id="global-search-results"
+              role="listbox"
+              className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a2e] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden max-h-[420px] overflow-y-auto backdrop-blur-xl"
+            >
               {totalResults === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-[#9baaa6]">
                   No results for{" "}
@@ -269,27 +349,39 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                           Workflows
                         </span>
                       </div>
-                      {results.workflows.map((w) => (
-                        <button
-                          key={w.id}
-                          onClick={() => navigate(`/workflows/${w.id}`)}
-                          className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-3"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">
-                              <Highlight text={w.title} query={query} />
-                            </p>
-                            <p className="text-xs text-[#9baaa6] mt-0.5">
-                              {w.team}
-                            </p>
-                          </div>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STAGE_COLORS[w.stage] ?? "bg-white/10 text-[#9baaa6]"}`}
+                      {results.workflows.map((w) => {
+                        const itemIndex = ++renderedSearchIndex;
+                        const isActive = activeSearchIndex === itemIndex;
+
+                        return (
+                          <button
+                            key={w.id}
+                            id={`search-workflow-${w.id}`}
+                            role="option"
+                            aria-selected={isActive}
+                            tabIndex={-1}
+                            onMouseEnter={() => setActiveSearchIndex(itemIndex)}
+                            onClick={() => navigate(`/workflows/${w.id}`)}
+                            className={`w-full text-left px-4 py-3 transition-colors border-b border-white/5 flex items-center gap-3 ${
+                              isActive ? "bg-white/10" : "hover:bg-white/5"
+                            }`}
                           >
-                            {STAGE_LABELS[w.stage] ?? w.stage}
-                          </span>
-                        </button>
-                      ))}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">
+                                <Highlight text={w.title} query={query} />
+                              </p>
+                              <p className="text-xs text-[#9baaa6] mt-0.5">
+                                {w.team}
+                              </p>
+                            </div>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STAGE_COLORS[w.stage] ?? "bg-white/10 text-[#9baaa6]"}`}
+                            >
+                              {STAGE_LABELS[w.stage] ?? w.stage}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -302,29 +394,41 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                           Tasks
                         </span>
                       </div>
-                      {results.tasks.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => navigate(`/workflows/${t.workflowId}`)}
-                          className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-3"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm font-medium truncate ${t.completed ? "line-through text-[#9baaa6]" : "text-white"}`}
-                            >
-                              <Highlight text={t.title} query={query} />
-                            </p>
-                            <p className="text-xs text-[#9baaa6] mt-0.5">
-                              in {t.workflow.title}
-                            </p>
-                          </div>
-                          {t.completed && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-[#29d3aa]/20 text-[#29d3aa] shrink-0">
-                              Done
-                            </span>
-                          )}
-                        </button>
-                      ))}
+                      {results.tasks.map((t) => {
+                        const itemIndex = ++renderedSearchIndex;
+                        const isActive = activeSearchIndex === itemIndex;
+
+                        return (
+                          <button
+                            key={t.id}
+                            id={`search-task-${t.id}`}
+                            role="option"
+                            aria-selected={isActive}
+                            tabIndex={-1}
+                            onMouseEnter={() => setActiveSearchIndex(itemIndex)}
+                            onClick={() => navigate(`/workflows/${t.workflowId}`)}
+                            className={`w-full text-left px-4 py-3 transition-colors border-b border-white/5 flex items-center gap-3 ${
+                              isActive ? "bg-white/10" : "hover:bg-white/5"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-sm font-medium truncate ${t.completed ? "line-through text-[#9baaa6]" : "text-white"}`}
+                              >
+                                <Highlight text={t.title} query={query} />
+                              </p>
+                              <p className="text-xs text-[#9baaa6] mt-0.5">
+                                in {t.workflow.title}
+                              </p>
+                            </div>
+                            {t.completed && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-[#29d3aa]/20 text-[#29d3aa] shrink-0">
+                                Done
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -337,22 +441,34 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                           Comments
                         </span>
                       </div>
-                      {results.comments.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => navigate(`/workflows/${c.workflowId}`)}
-                          className="w-full text-left px-4 py-3 hover:bg-white/5 transition-colors flex items-start gap-3"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white truncate">
-                              <Highlight text={c.body} query={query} />
-                            </p>
-                            <p className="text-xs text-[#9baaa6] mt-0.5">
-                              in {c.workflow.title}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
+                      {results.comments.map((c) => {
+                        const itemIndex = ++renderedSearchIndex;
+                        const isActive = activeSearchIndex === itemIndex;
+
+                        return (
+                          <button
+                            key={c.id}
+                            id={`search-comment-${c.id}`}
+                            role="option"
+                            aria-selected={isActive}
+                            tabIndex={-1}
+                            onMouseEnter={() => setActiveSearchIndex(itemIndex)}
+                            onClick={() => navigate(`/workflows/${c.workflowId}`)}
+                            className={`w-full text-left px-4 py-3 transition-colors flex items-start gap-3 ${
+                              isActive ? "bg-white/10" : "hover:bg-white/5"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white truncate">
+                                <Highlight text={c.body} query={query} />
+                              </p>
+                              <p className="text-xs text-[#9baaa6] mt-0.5">
+                                in {c.workflow.title}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -422,26 +538,26 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
               onClick={() => router.push("/settings")}
-              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
+              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white cursor-pointer"
             >
-              <User className="mr-2 h-4 w-4 text-[#29d3aa]" /> Profile
+              <User className="h-4 w-4 text-[#29d3aa]" /> Profile
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/settings")}
-              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
+              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white cursor-pointer"
             >
               Settings
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => router.push("/team")}
-              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
+              className="text-[#9baaa6] hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white cursor-pointer"
             >
               Team
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-[#ff6b6b] hover:text-white hover:bg-[#ff6b6b]/10 focus:bg-[#ff6b6b]/10 cursor-pointer"
+              className="text-[#ff6b6b] hover:text-white hover:bg-[#ff6b6b]/10 focus:bg-[#ff6b6b]/10 focus:text-white cursor-pointer"
             >
               Log out
             </DropdownMenuItem>

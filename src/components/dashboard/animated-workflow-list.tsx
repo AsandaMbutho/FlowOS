@@ -31,9 +31,9 @@ export function AnimatedWorkflowList() {
     return (
       <div className="space-y-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl p-5 animate-pulse">
-            <div className="h-5 w-3/4 bg-gray-200 rounded mb-3"></div>
-            <div className="h-2 w-full bg-gray-200 rounded"></div>
+          <div key={i} className="bg-card rounded-xl p-5 animate-pulse">
+            <div className="h-5 w-3/4 bg-muted rounded mb-3"></div>
+            <div className="h-2 w-full bg-muted rounded"></div>
           </div>
         ))}
       </div>
@@ -49,7 +49,7 @@ export function AnimatedWorkflowList() {
       case "BLOCKED":
         return "bg-red-100 text-red-600";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -71,10 +71,10 @@ export function AnimatedWorkflowList() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="p-5 border-b bg-gray-50">
+    <div className="bg-card rounded-xl shadow-sm overflow-hidden border border-border">
+      <div className="p-5 border-b bg-muted/40">
         <h2 className="text-lg font-semibold">📋 Active Workflows</h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Progress updates with smooth animations
         </p>
       </div>
@@ -86,16 +86,15 @@ export function AnimatedWorkflowList() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05, duration: 0.3 }}
-              whileHover={{ backgroundColor: "#f9fafb", x: 4 }}
-              className="p-5 transition-all"
+              className="p-5"
             >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
+              <div className="flex justify-between items-start gap-3 mb-3 min-w-0">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">
                     {workflow.title}
                   </h3>
-                  <div className="flex gap-2 mt-1">
-                    <span className="text-xs text-gray-500">
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">
                       👤 {workflow.assignee?.name || "Unassigned"}
                     </span>
                     <span

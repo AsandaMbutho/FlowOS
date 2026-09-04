@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
+import { sendSupervisorCommentNotifications } from "@/lib/email-notifications";
 
 // GET /api/comments?workflowId=xxx
 export async function GET(request: Request) {
@@ -38,7 +41,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { workflowId, body: commentBody, authorId } = body;
+    const { workflowId, body: commentBody } = body;
 
     if (!workflowId || !commentBody?.trim()) {
       return NextResponse.json(
@@ -47,11 +50,33 @@ export async function POST(request: Request) {
       );
     }
 
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id && !session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const author = await db.user.findFirst({
+      where: {
+        OR: [
+          ...(session.user.id ? [{ id: session.user.id }] : []),
+          ...(session.user.email ? [{ email: session.user.email }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (!author) {
+      return NextResponse.json(
+        { error: "Signed-in user was not found" },
+        { status: 401 },
+      );
+    }
+
     const comment = await db.comment.create({
       data: {
         workflowId,
         body: commentBody.trim(),
-        authorId: authorId || null,
+        authorId: author.id,
       },
       include: {
         author: {
@@ -59,6 +84,8 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    await sendSupervisorCommentNotifications(comment.id);
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

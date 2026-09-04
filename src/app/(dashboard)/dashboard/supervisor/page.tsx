@@ -32,6 +32,8 @@ interface Workflow {
   status: string;
   priority: string;
   dueDate: string;
+  dueDateIso?: string | null;
+  assignedDateIso?: string | null;
   progress: number;
   createdAt: string;
   assignee: { name: string; email?: string };

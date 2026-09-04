@@ -262,7 +262,7 @@
   }
 
   .badge-completed {
-    @apply bg-gray-100 text-gray-600;
+    @apply bg-muted text-muted-foreground;
   }
   .dark .badge-completed {
     @apply bg-gray-800/60 text-gray-400;
@@ -590,8 +590,13 @@
   }
 
   /* ── CUSTOM SCROLLBAR ────────────────────────────────────────────── */
+  .custom-scrollbar {
+    scrollbar-color: #22d3ee transparent;
+    scrollbar-width: thin;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
     height: 4px;
   }
 
@@ -600,11 +605,13 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full;
+    background: linear-gradient(180deg, #22d3ee 0%, #29d3aa 100%);
+    border-radius: 9999px;
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-white/20;
+    background: linear-gradient(180deg, #67e8f9 0%, #34d399 100%);
   }
 }
 

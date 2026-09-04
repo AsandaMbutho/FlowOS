@@ -12,7 +12,15 @@ interface Workflow {
   priority: string;
 }
 
-const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan"]; // <-- Lisa and Mike removed
+const TEAM_MEMBERS = [
+  "Asanda",
+  "Sizwe",
+  "Themba",
+  "Ridwaan",
+  "Matlhodi",
+  "Lutendo",
+  "Everyone",
+];
 
 export function PipelineView() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -85,9 +93,12 @@ export function PipelineView() {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl p-5 animate-pulse border">
-            <div className="h-5 w-3/4 bg-gray-200 rounded mb-3"></div>
-            <div className="h-2 w-full bg-gray-200 rounded"></div>
+          <div
+            key={i}
+            className="rounded-xl border border-border bg-card p-5 animate-pulse"
+          >
+            <div className="mb-3 h-5 w-3/4 rounded bg-muted"></div>
+            <div className="h-2 w-full rounded bg-muted"></div>
           </div>
         ))}
       </div>
@@ -103,7 +114,7 @@ export function PipelineView() {
       case "BLOCKED":
         return "bg-red-100 text-red-600";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -119,12 +130,12 @@ export function PipelineView() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
-      <div className="divide-y">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="divide-y divide-border">
         {workflows.map((workflow) => (
           <div
             key={workflow.id}
-            className="p-5 hover:bg-gray-50 transition-colors"
+            className="p-5 transition-colors hover:bg-muted/40"
           >
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1">
@@ -134,7 +145,7 @@ export function PipelineView() {
                       type="text"
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}
-                      className="border rounded px-2 py-1 text-sm font-semibold w-full max-w-md"
+                      className="w-full max-w-md rounded border border-border bg-background px-2 py-1 text-sm font-semibold text-foreground"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === "Enter") saveTitle(workflow.id);
@@ -158,12 +169,12 @@ export function PipelineView() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 group">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-foreground">
                       {workflow.title}
                     </h3>
                     <button
                       onClick={() => startEditing(workflow)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600"
+                      className="text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
                       title="Edit workflow name"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -171,8 +182,8 @@ export function PipelineView() {
                   </div>
                 )}
                 <div className="flex gap-2 mt-1">
-                  <span className="text-xs text-gray-500">
-                    👤 {workflow.assignee?.name || "Unassigned"}
+                  <span className="text-xs text-muted-foreground">
+                    Assigned to {workflow.assignee?.name || "Unassigned"}
                   </span>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(workflow.stage)}`}
@@ -181,9 +192,11 @@ export function PipelineView() {
                   </span>
                 </div>
               </div>
-              <span className="text-sm font-bold">{workflow.progress}%</span>
+              <span className="text-sm font-bold text-foreground">
+                {workflow.progress}%
+              </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full rounded-full bg-muted h-2">
               <div
                 className="bg-teal-600 h-2 rounded-full transition-all"
                 style={{ width: `${workflow.progress}%` }}
@@ -192,7 +205,7 @@ export function PipelineView() {
           </div>
         ))}
         {workflows.length === 0 && (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-muted-foreground">
             No workflows found.
           </div>
         )}

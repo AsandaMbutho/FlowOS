@@ -88,8 +88,8 @@ const STATUS_CFG: Record<Status, { bg: string; text: string }> = {
     text: "text-green-700 dark:text-green-300",
   },
   "To Do": {
-    bg: "bg-gray-100 dark:bg-muted/30",
-    text: "text-gray-600 dark:text-muted-foreground",
+    bg: "bg-muted",
+    text: "text-muted-foreground",
   },
 };
 
@@ -123,7 +123,15 @@ const progressColor = (p: number) =>
         ? "bg-yellow-500"
         : "bg-red-400";
 
-const TEAM_MEMBERS = ["Asanda", "Sizwe", "Themba", "Shravan"];
+const TEAM_MEMBERS = [
+  "Asanda",
+  "Sizwe",
+  "Themba",
+  "Ridwaan",
+  "Matlhodi",
+  "Lutendo",
+  "Everyone",
+];
 const TEAMS: string[] = ["Engineering", "Design", "Sales", "Operations"];
 const STATUSES: Status[] = [
   "In Progress",
@@ -1033,10 +1041,14 @@ function WorkflowsContent() {
     if (!validate()) return;
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        assigneeName: form.assigneeName === "Everyone" ? "" : form.assigneeName,
+      };
       const res = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
       const newWorkflow = await res.json();
@@ -1129,8 +1141,8 @@ function WorkflowsContent() {
         {[
           {
             icon: Users,
-            color: "bg-gray-100 dark:bg-muted/30",
-            iconColor: "text-gray-500 dark:text-muted-foreground",
+            color: "bg-muted",
+            iconColor: "text-muted-foreground",
             label: "Total",
             val: total,
           },

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
+import { authOptions } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { sendMentionEmail } from "@/lib/email";
+import { sendSupervisorCommentNotifications } from "@/lib/email-notifications";
+import { resolveMentionedUsers } from "@/lib/comment-mentions";
 
 // GET /api/workflows/[id]/comments
 export async function GET(
@@ -37,7 +41,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { body, authorName, mentionedNames } = await request.json();
+    const { body } = await request.json();
 
     if (!body?.trim()) {
       return NextResponse.json(
@@ -46,15 +50,29 @@ export async function POST(
       );
     }
 
-    // Resolve author
-    const author = authorName
-      ? await db.user.findFirst({ where: { name: authorName } })
-      : null;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Resolve mentioned users
-    const mentionedUsers = mentionedNames?.length
-      ? await db.user.findMany({ where: { name: { in: mentionedNames } } })
-      : [];
+    const author = await db.user.findFirst({
+      where: {
+        OR: [
+          ...(session.user.id ? [{ id: session.user.id }] : []),
+          { email: session.user.email },
+        ],
+      },
+      select: { id: true, name: true },
+    });
+
+    if (!author) {
+      return NextResponse.json(
+        { error: "Signed-in user was not found" },
+        { status: 401 },
+      );
+    }
+
+    const mentionedUsers = await resolveMentionedUsers(body);
 
     // Get workflow for notification context
     const workflow = await db.workflow.findUnique({
@@ -66,7 +84,7 @@ export async function POST(
       data: {
         body: body.trim(),
         workflowId: id,
-        authorId: author?.id ?? null,
+        authorId: author.id,
         mentions: {
           create: mentionedUsers.map((u) => ({ userId: u.id })),
         },
@@ -81,11 +99,14 @@ export async function POST(
 
     // Create in-app notifications AND send emails for mentions
     for (const user of mentionedUsers) {
+      // Do not email a user when they mention themselves.
+      if (user.id === author.id) continue;
+
       // Create in-app notification
       await createNotification({
         type: "MENTION",
         title: "You were mentioned",
-        message: `${author?.name ?? "Someone"} mentioned you in "${workflow?.title}"`,
+        message: `${author.name ?? "Someone"} mentioned you in "${workflow?.title}"`,
         userId: user.id,
         workflowId: id,
       });
@@ -94,7 +115,7 @@ export async function POST(
       if (user.email) {
         const emailResult = await sendMentionEmail(
           user.email,
-          author?.name ?? "Someone",
+          author.name ?? "Someone",
           workflow?.title ?? "a workflow",
           body.trim(),
           id,
@@ -113,6 +134,8 @@ export async function POST(
         console.log(`⚠️ No email address for user: ${user.name}`);
       }
     }
+
+    await sendSupervisorCommentNotifications(comment.id);
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

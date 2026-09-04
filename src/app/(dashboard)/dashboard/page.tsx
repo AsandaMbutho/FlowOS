@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { PipelineView } from "@/components/dashboard/pipeline-view";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { StatsCards } from "@/components/dashboard/stats-cards";
+import { GoogleCalendarCard } from "@/components/dashboard/google-calendar-card";
+import { MiniDayCalendar } from "@/components/dashboard/mini-day-calendar";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
@@ -21,6 +23,7 @@ import {
   File,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const DATE_OPTIONS = ["Today", "This Week", "This Month", "Last 30 Days"];
 
@@ -31,6 +34,9 @@ interface Workflow {
   priority: string;
   team: string;
   dueDate: string;
+  dueDateIso?: string | null;
+  assignedDateIso?: string | null;
+  createdAt?: string;
   progress: number;
   tasksLeft: number;
   assignee: { name: string };
@@ -39,12 +45,14 @@ interface Workflow {
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const currentUser = session?.user?.name ?? "";
+  const router = useRouter();
 
   const [dateRange, setDateRange] = useState("Today");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [myWorkflows, setMyWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
 
   const hour = new Date().getHours();
   const greeting =
@@ -58,6 +66,33 @@ export default function DashboardPage() {
       .catch(() => setMyWorkflows([]))
       .finally(() => setLoading(false));
   }, [currentUser]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowDatePicker(false);
+        setShowExportMenu(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowDatePicker(false);
+        setShowExportMenu(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const myCompleted = myWorkflows.filter(
     (w) => w.status === "Completed",
@@ -80,7 +115,9 @@ export default function DashboardPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
   }
 
@@ -106,7 +143,13 @@ export default function DashboardPage() {
       w.dueDate,
       w.tasksLeft,
     ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`)
+          .join(","),
+      )
+      .join("\n");
     download("flowos-workflows.csv", "text/csv", csv);
     setShowExportMenu(false);
   }
@@ -254,11 +297,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in overflow-x-hidden">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {greeting}, {currentUser}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -267,31 +310,39 @@ export default function DashboardPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div
+          ref={actionMenuRef}
+          className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end"
+        >
           {/* Date Range Picker */}
           <div className="relative">
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              className="gap-1.5 border-border bg-background hover:bg-muted"
-              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="min-w-[116px] gap-1.5 border-border bg-background hover:border-[#29d3aa]/40 hover:bg-[#29d3aa]/10 hover:text-[#29d3aa]"
+              onClick={() => {
+                setShowDatePicker((open) => !open);
+                setShowExportMenu(false);
+              }}
             >
               <CalendarDays className="w-4 h-4" />
-              {dateRange}
+              <span className="truncate">{dateRange}</span>
               <ChevronDown
                 className={`w-3 h-3 transition-transform ${showDatePicker ? "rotate-180" : ""}`}
               />
             </Button>
             {showDatePicker && (
-              <div className="absolute right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 py-1 min-w-[160px] animate-fade-in">
+              <div className="absolute left-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 py-1 min-w-[170px] animate-fade-in sm:left-auto sm:right-0">
                 {DATE_OPTIONS.map((opt) => (
                   <button
+                    type="button"
                     key={opt}
                     onClick={() => {
                       setDateRange(opt);
                       setShowDatePicker(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors ${
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-[#29d3aa]/10 hover:text-[#29d3aa] transition-colors ${
                       dateRange === opt
                         ? "text-accent font-medium"
                         : "text-muted-foreground"
@@ -307,41 +358,50 @@ export default function DashboardPage() {
           {/* Export Dropdown */}
           <div className="relative">
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              className="gap-1.5 border-border bg-background hover:bg-muted"
-              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="min-w-[104px] gap-1.5 border-border bg-background hover:border-[#29d3aa]/40 hover:bg-[#29d3aa]/10 hover:text-[#29d3aa]"
+              onClick={() => {
+                setShowExportMenu((open) => !open);
+                setShowDatePicker(false);
+              }}
             >
-              <Download className="w-4 h-4" /> Export
+              <Download className="w-4 h-4" />
+              <span>Export</span>
               <ChevronDown
                 className={`w-3 h-3 transition-transform ${showExportMenu ? "rotate-180" : ""}`}
               />
             </Button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 py-1 min-w-[180px] animate-fade-in">
+              <div className="absolute left-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-30 py-1 min-w-[190px] animate-fade-in sm:left-auto sm:right-0">
                 <button
+                  type="button"
                   onClick={exportCSV}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#29d3aa]/10 hover:text-[#29d3aa] transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4 text-emerald-600" /> Export as
                   CSV
                 </button>
                 <button
+                  type="button"
                   onClick={exportExcel}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#29d3aa]/10 hover:text-[#29d3aa] transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-blue-600" /> Export
                   as Excel
                 </button>
                 <button
+                  type="button"
                   onClick={exportPDF}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#29d3aa]/10 hover:text-[#29d3aa] transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4 text-red-500" /> Export as PDF
                 </button>
                 <button
+                  type="button"
                   onClick={exportJSON}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors text-muted-foreground flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-[#29d3aa]/10 hover:text-[#29d3aa] transition-colors text-muted-foreground flex items-center gap-2"
                 >
                   <File className="w-4 h-4 text-orange-500" /> Export as JSON
                 </button>
@@ -350,9 +410,10 @@ export default function DashboardPage() {
           </div>
 
           {/* New Workflow Button */}
-          <Link href="/workflows">
+          <Link href="/workflows" className="min-w-0">
             <Button size="sm" className="btn-primary gap-1.5">
-              <Plus className="w-4 h-4" /> New Workflow
+              <Plus className="w-4 h-4" />
+              <span>New Workflow</span>
             </Button>
           </Link>
         </div>
@@ -428,8 +489,8 @@ export default function DashboardPage() {
       <InsightsPanel />
 
       {/* Main Grid: My Workflows + Team Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-0">
+        <div className="lg:col-span-2 space-y-3 min-w-0">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-foreground">
@@ -452,7 +513,7 @@ export default function DashboardPage() {
           <PipelineView />
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 min-w-0">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-foreground">
               Team Activity
@@ -463,6 +524,18 @@ export default function DashboardPage() {
             </span>
           </div>
           <ActivityFeed />
+          <GoogleCalendarCard />
+          <MiniDayCalendar
+            tasks={myWorkflows.map((w) => ({
+              id: w.id,
+              title: w.title,
+              assignedDateIso: w.assignedDateIso ?? w.createdAt ?? null,
+              status: w.status,
+              priority: w.priority,
+              assigneeName: w.assignee?.name ?? "Unassigned",
+            }))}
+            onSelectTask={(id) => router.push(`/workflows/${id}`)}
+          />
         </div>
       </div>
 

@@ -15,6 +15,7 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
+  ExternalLink,
   Rocket,
   ShieldCheck,
   BookOpen,
@@ -25,7 +26,13 @@ import { Card } from "@/components/ui/card";
 
 const productData: Record<
   string,
-  { name: string; description: string; color: string; icon: LucideIcon }
+  {
+    name: string;
+    description: string;
+    color: string;
+    icon: LucideIcon;
+    websiteUrl?: string;
+  }
 > = {
   flowos: {
     name: "FlowOS",
@@ -38,12 +45,15 @@ const productData: Record<
     description: "Cybersecurity platform integration and protection",
     color: "from-red-500 to-orange-500",
     icon: ShieldCheck,
+    websiteUrl: "https://cyber-safe-africa.vercel.app/",
   },
   elearning: {
     name: "E-Learning Platform",
     description: "Educational content delivery system",
     color: "from-blue-500 to-cyan-500",
     icon: BookOpen,
+    websiteUrl:
+      "https://media-on-africa-learning-hub.github.io/Media-On-Africa-Learning-Hub/index.html",
   },
   crm: {
     name: "CRM Real Estate Platform",
@@ -125,7 +135,7 @@ export default function ProductDetailPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       {/* Back button */}
-      <Link href="/products">
+      <Link href="/products" className="inline-flex w-fit">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="w-4 h-4" /> Back to Products
         </button>
@@ -145,8 +155,20 @@ export default function ProductDetailPage() {
               {product.description}
             </p>
           </div>
-          <div className="bg-white/20 rounded-lg px-4 py-2 text-sm">
-            {totalWorkflows} workflows
+          <div className="flex flex-col items-end gap-3">
+            <div className="bg-white/20 rounded-lg px-4 py-2 text-sm">
+              {totalWorkflows} workflows
+            </div>
+            {product.websiteUrl && (
+              <a
+                href={product.websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-white/90"
+              >
+                Open product <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>

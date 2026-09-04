@@ -7,6 +7,187 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  name           String?
+  avatar         String?
+  password       String?
+  role           Role             @default(USER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  activities     Activity[]       @relation("UserActivities")
+  comments       Comment[]        @relation("CommentAuthor")
+  mentionedIn    CommentMention[]
+  documents      Document[]
+  leaveBalance   LeaveBalance?
+  leaveDecisions LeaveRequest[]   @relation("LeaveApprovedBy")
+  leaveRequests  LeaveRequest[]   @relation("UserLeaveRequests")
+  assignedTasks  Task[]           @relation("UserTasks")
+  workflows      Workflow[]       @relation("UserWorkflows")
+}
+
+model Workflow {
+  id           String                 @id @default(cuid())
+  title        String
+  description  String?
+  priority     Priority               @default(MEDIUM)
+  stage        Stage                  @default(TODO)
+  assigneeId   String?
+  team         String?
+  tags         String
+  dueDate      DateTime?
+  progress     Int                    @default(0)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  completedAt  DateTime?
+  activities   Activity[]             @relation("WorkflowActivities")
+  comments     Comment[]
+  documents    Document[]
+  files        File[]
+  tasks        Task[]                 @relation("WorkflowTasks")
+  assignee     User?                  @relation("UserWorkflows", fields: [assigneeId], references: [id])
+  stageHistory WorkflowStageHistory[]
+}
+
+model File {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  size         Int
+  mimeType     String
+  workflowId   String
+  uploadedBy   String?
+  createdAt    DateTime @default(now())
+  workflow     Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+}
+
+model Task {
+  id         String   @id @default(cuid())
+  title      String
+  completed  Boolean  @default(false)
+  workflowId String
+  assigneeId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  assignee   User?    @relation("UserTasks", fields: [assigneeId], references: [id])
+  workflow   Workflow @relation("WorkflowTasks", fields: [workflowId], references: [id])
+}
+
+model Activity {
+  id         String   @id @default(cuid())
+  action     String
+  details    String?
+  userId     String?
+  workflowId String
+  metadata   String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation("UserActivities", fields: [userId], references: [id])
+  workflow   Workflow @relation("WorkflowActivities", fields: [workflowId], references: [id])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  type        NotifType
+  title       String
+  message     String
+  read        Boolean   @default(false)
+  userId      String?
+  workflowId  String?
+  createdAt   DateTime  @default(now())
+  emailSent   Boolean   @default(false)
+  emailSentAt DateTime?
+  emailError  String?
+}
+
+model Comment {
+  id         String           @id @default(cuid())
+  body       String
+  authorId   String?
+  workflowId String
+  createdAt  DateTime         @default(now())
+  author     User?            @relation("CommentAuthor", fields: [authorId], references: [id])
+  workflow   Workflow         @relation(fields: [workflowId], references: [id])
+  mentions   CommentMention[]
+}
+
+model CommentMention {
+  id        String  @id @default(cuid())
+  commentId String
+  userId    String
+  comment   Comment @relation(fields: [commentId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+model WorkflowStageHistory {
+  id         String    @id @default(cuid())
+  workflowId String
+  stage      String
+  enteredAt  DateTime  @default(now())
+  exitedAt   DateTime?
+  workflow   Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([stage])
+  @@index([enteredAt])
+}
+
+model Document {
+  id         String    @id @default(cuid())
+  name       String
+  fileUrl    String
+  fileType   String    @default("Other")
+  fileSize   String    @default("0 KB")
+  project    String
+  workflowId String?
+  uploadedBy String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User?     @relation(fields: [uploadedBy], references: [id])
+  workflow   Workflow? @relation(fields: [workflowId], references: [id])
+}
+
+model LeaveRequest {
+  id          String       @id @default(cuid())
+  userId      String
+  type        LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      LeaveStatus  @default(PENDING)
+  managerNote String?
+  isHalfDay   Boolean      @default(false)
+  halfDayType HalfDayType?
+  reviewerId  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  reviewer    User?        @relation("LeaveApprovedBy", fields: [reviewerId], references: [id])
+  user        User         @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model LeaveBalance {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  annualEntitlement   Float    @default(20)
+  annualUsed          Float    @default(0)
+  annualCarryOver     Float    @default(0)
+  sickEntitlement     Float    @default(10)
+  sickUsed            Float    @default(0)
+  sickCarryOver       Float    @default(0)
+  personalEntitlement Float    @default(3)
+  personalUsed        Float    @default(0)
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 enum Role {
   ADMIN
   MANAGER
@@ -35,150 +216,23 @@ enum NotifType {
   MENTION
 }
 
-model User {
-  id            String           @id @default(cuid())
-  email         String           @unique
-  name          String?
-  avatar        String?
-  password      String?
-  role          Role             @default(USER)
-  workflows     Workflow[]       @relation("UserWorkflows")
-  assignedTasks Task[]           @relation("UserTasks")
-  activities    Activity[]       @relation("UserActivities")
-  comments      Comment[]        @relation("CommentAuthor")
-  mentionedIn   CommentMention[]
-  documents     Document[]       // ← ADDED: Documents uploaded by user
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+  MATERNITY
+  PATERNITY
+  UNPAID
+  OTHER
 }
 
-model Workflow {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  priority    Priority   @default(MEDIUM)
-  stage       Stage      @default(TODO)
-  assigneeId  String?
-  assignee    User?      @relation("UserWorkflows", fields: [assigneeId], references: [id])
-  team        String?
-  tags        String
-  dueDate     DateTime?
-  progress    Int        @default(0)
-  completedAt DateTime?
-  tasks       Task[]     @relation("WorkflowTasks")
-  activities  Activity[] @relation("WorkflowActivities")
-  comments    Comment[]
-  files       File[]     // File attachments
-  documents   Document[] // ← ADDED: Documents linked to workflow
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  // Stage History for accurate analytics
-  stageHistory WorkflowStageHistory[]
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  DENIED
 }
 
-// File model for attachments
-model File {
-  id           String   @id @default(cuid())
-  filename     String   // Storage filename (path in blob)
-  originalName String   // Original user filename
-  url          String   // Public URL
-  size         Int      // File size in bytes
-  mimeType     String   // e.g. image/png, application/pdf
-  workflowId   String
-  workflow     Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  uploadedBy   String?  // User ID who uploaded it (optional for now)
-  createdAt    DateTime @default(now())
-  
-  @@index([workflowId])
-}
-
-model Task {
-  id         String   @id @default(cuid())
-  title      String
-  completed  Boolean  @default(false)
-  workflowId String
-  workflow   Workflow @relation("WorkflowTasks", fields: [workflowId], references: [id])
-  assigneeId String?
-  assignee   User?    @relation("UserTasks", fields: [assigneeId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-model Activity {
-  id         String   @id @default(cuid())
-  action     String
-  details    String?
-  userId     String?
-  user       User?    @relation("UserActivities", fields: [userId], references: [id])
-  workflowId String
-  workflow   Workflow @relation("WorkflowActivities", fields: [workflowId], references: [id])
-  metadata   String?
-  createdAt  DateTime @default(now())
-}
-
-model Notification {
-  id           String    @id @default(cuid())
-  type         NotifType
-  title        String
-  message      String
-  read         Boolean   @default(false)
-  userId       String?
-  workflowId   String?
-  createdAt    DateTime  @default(now())
-  emailSent    Boolean   @default(false)
-  emailSentAt  DateTime?
-  emailError   String?
-}
-
-model Comment {
-  id         String   @id @default(cuid())
-  body       String
-  authorId   String?
-  workflowId String
-  createdAt  DateTime @default(now())
-
-  author   User?    @relation("CommentAuthor", fields: [authorId], references: [id])
-  workflow Workflow @relation(fields: [workflowId], references: [id])
-
-  mentions CommentMention[]
-}
-
-model CommentMention {
-  id        String @id @default(cuid())
-  commentId String
-  userId    String
-
-  comment Comment @relation(fields: [commentId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
-}
-
-// Workflow Stage History - tracks when workflows enter/exit each stage
-model WorkflowStageHistory {
-  id          String   @id @default(cuid())
-  workflowId  String
-  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  stage       String
-  enteredAt   DateTime @default(now())
-  exitedAt    DateTime?
-  
-  @@index([workflowId])
-  @@index([stage])
-  @@index([enteredAt])
-}
-
-// Document model - for project-based document storage
-model Document {
-  id          String    @id @default(cuid())
-  name        String
-  fileUrl     String
-  fileType    String    @default("Other")
-  fileSize    String    @default("0 KB")
-  project     String    // "flowos", "cybersafe", "elearning", "crm"
-  workflowId  String?
-  workflow    Workflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
-  uploadedBy  String?
-  user        User?     @relation(fields: [uploadedBy], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+enum HalfDayType {
+  MORNING
+  AFTERNOON
 }

@@ -17,8 +17,8 @@ export default function LoginPage() {
     setError("");
 
     const result = await signIn("credentials", {
-      email,
-      password,
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
       redirect: false,
     });
 
@@ -31,29 +31,47 @@ export default function LoginPage() {
     }
   };
 
-  // Quick login buttons for demo
+  // Quick login buttons for demo - all use password123.
   const demoLogins = [
     {
-      name: "Themba (Supervisor)",
-      email: "themba@mediaonafrica.co.za",
+      name: "Themba  Netshifira(Supervisor)",
+      email: "netshifirathemba0@gmail.com",
       password: "password123",
       role: "MANAGER",
     },
     {
-      name: "Asanda (Developer)",
-      email: "asanda@mediaonafrica.co.za",
+      name: "Asanda Mbutho (Supervisor)",
+      email: "asandambutho@icloud.com",
+      password: "password123",
+      role: "Supervisor",
+    },
+    {
+      name: "Sizwe Yende (Developer)",
+      email: "sizweschaba723@gmail.com",
       password: "password123",
       role: "USER",
     },
     {
-      name: "Sizwe (Developer)",
-      email: "sizwe@mediaonafrica.co.za",
+      name: "Ridwaan Sailie (Developer)",
+      email: "sridwaan0@gmail.com",
       password: "password123",
       role: "USER",
     },
     {
-      name: "Shravan (Developer)",
-      email: "shravan@mediaonafrica.co.za",
+      name: "Lutendo Matshidze (Developer)",
+      email: "lupreshie@gmail.com",
+      password: "password123",
+      role: "USER",
+    },
+    {
+      name: "Matlhodi Moila (Developer)",
+      email: "moilamatlhodi707@gmail.com",
+      password: "password123",
+      role: "USER",
+    },
+    {
+      name: "Neo Matekane (Data Analyst)",
+      email: "neomate03@gmail.com",
       password: "password123",
       role: "USER",
     },
@@ -96,9 +114,14 @@ export default function LoginPage() {
             </label>
             <input
               type="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C48C] focus:border-transparent"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-950 placeholder:text-gray-500 caret-gray-950 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#00C48C]"
               placeholder="you@company.com"
               required
             />
@@ -110,10 +133,14 @@ export default function LoginPage() {
             </label>
             <input
               type="password"
+              autoComplete="current-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00C48C] focus:border-transparent"
-              placeholder="••••••••"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-950 placeholder:text-gray-500 caret-gray-950 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#00C48C]"
+              placeholder="password123"
               required
             />
           </div>
@@ -157,7 +184,11 @@ export default function LoginPage() {
                 <p className="text-xs text-gray-500">{demo.email}</p>
               </div>
               <span
-                className={`text-xs px-2 py-1 rounded ${demo.role === "MANAGER" ? "bg-purple-100 text-purple-600" : "bg-gray-100 text-gray-600"}`}
+                className={`text-xs px-2 py-1 rounded ${
+                  demo.role === "MANAGER"
+                    ? "bg-purple-100 text-purple-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
               >
                 {demo.role === "MANAGER" ? "Supervisor" : "Team Member"}
               </span>

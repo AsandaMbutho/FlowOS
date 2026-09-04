@@ -9,6 +9,7 @@ import {
   Smartphone,
   Rocket,
   Briefcase,
+  Cpu,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -113,6 +114,21 @@ const servicesData: Record<
       "Risk assessment",
       "Technology selection",
       "Digital maturity assessment",
+    ],
+  },
+  "ai-services": {
+    title: "AI Services",
+    description:
+      "Practical AI assistants, automation, and workflow intelligence for teams.",
+    icon: Cpu,
+    color: "from-emerald-500 to-blue-500",
+    details: [
+      "AI assistant design and implementation",
+      "Workflow automation",
+      "Document-aware chat experiences",
+      "Predictive analytics",
+      "Task and pipeline automation",
+      "AI governance and rollout support",
     ],
   },
 };

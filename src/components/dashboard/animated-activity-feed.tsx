@@ -52,11 +52,11 @@ export function AnimatedActivityFeed() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="p-5 border-b bg-gray-50">
+      <div className="bg-card rounded-xl shadow-lg overflow-hidden">
+        <div className="p-5 border-b bg-muted/40">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">🔄 Live Activity Feed</h2>
-            <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">
               Loading...
             </span>
           </div>
@@ -64,10 +64,10 @@ export function AnimatedActivityFeed() {
         <div className="p-5 space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="animate-pulse flex gap-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+              <div className="w-8 h-8 bg-muted rounded-full"></div>
               <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
               </div>
             </div>
           ))}
@@ -77,8 +77,8 @@ export function AnimatedActivityFeed() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="p-5 border-b bg-gray-50">
+    <div className="bg-card rounded-xl shadow-lg overflow-hidden">
+      <div className="p-5 border-b bg-muted/40">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">🔄 Live Activity Feed</h2>
           <div className="flex items-center gap-2">
@@ -107,25 +107,25 @@ export function AnimatedActivityFeed() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.3, delay: idx * 0.05 }}
-              className="p-4 border-b hover:bg-gray-50"
+              className="p-4 border-b"
             >
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center text-sm font-bold text-teal-600">
+                <div className="w-8 h-8 bg-[#29d3aa]/15 rounded-full flex items-center justify-center text-sm font-bold text-teal-600">
                   {activity.userName?.[0] || "?"}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm">
                     <span className="font-semibold">
                       {activity.userName || "Someone"}
                     </span>
-                    <span className="text-gray-600 ml-2">
+                    <span className="text-muted-foreground ml-2">
                       {activity.action}
                     </span>
-                    <span className="font-medium ml-2">
+                    <span className="font-medium ml-2 text-foreground">
                       {activity.workflowTitle}
                     </span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {new Date(activity.createdAt).toLocaleString()}
                   </p>
                 </div>

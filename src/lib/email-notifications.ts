@@ -250,7 +250,7 @@ export async function sendLeaveRequestSubmittedNotifications(
         leaveRequest.type,
         leaveRequest.startDate,
         leaveRequest.endDate,
-        leaveRequest.reason,
+        leaveRequest.reason ?? "",
       );
 
       await prisma.notification.create({
@@ -293,7 +293,7 @@ export async function sendLeaveRequestSubmittedNotifications(
         leaveRequest.type,
         leaveRequest.startDate,
         leaveRequest.endDate,
-        leaveRequest.reason,
+        leaveRequest.reason ?? "",
       );
 
       results.push({

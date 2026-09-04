@@ -1,10 +1,9 @@
 import { prisma } from "./prisma";
-import { LeaveType } from "@prisma/client";
+import { LeaveType, HalfDayType, LeaveStatus } from "@prisma/client";
 import {
   sendLeaveRequestDecisionNotification,
   sendLeaveRequestSubmittedNotifications,
 } from "./email-notifications";
-
 
 export interface SubmitLeaveRequestInput {
   type: LeaveType;
@@ -16,7 +15,6 @@ export interface SubmitLeaveRequestInput {
   isHalfDay?: boolean;
   halfDayType?: string;
 }
-
 
 /**
  * Submit a leave request for a user.
@@ -33,10 +31,8 @@ export async function submitLeaveRequest(
       endDate: input.endDate,
       reason: input.reason,
       status: "PENDING",
-      doctorsNoteDataUrl: input.doctorsNoteDataUrl || null,
-      doctorsNoteName: input.doctorsNoteName || null,
       isHalfDay: input.isHalfDay || false,
-      halfDayType: input.isHalfDay ? input.halfDayType : null,
+      halfDayType: input.isHalfDay ? (input.halfDayType as HalfDayType) : null,
     },
     include: {
       user: {
@@ -159,7 +155,7 @@ export async function decideLeaveRequest(
       id: leaveRequestId,
     },
     data: {
-      status: input.status,
+      status: input.status as LeaveStatus,
       managerNote: input.managerNote || null,
       reviewerId: input.reviewerId,
       reviewedAt: new Date(),

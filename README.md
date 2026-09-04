@@ -144,7 +144,6 @@ Real-Time Notifications
 Power BI Integration
 Role-Based Workflow Automation
 
-
 👨‍💻 About the Developer
 
 Software Engineer focused on building software that solves business problems through workflow automation, intelligent systems, and scalable web technologies.

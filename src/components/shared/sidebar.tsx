@@ -33,6 +33,7 @@ import {
   Briefcase,
   Bot,
   CalendarCheck,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Briefcase,
   Bot,
   CalendarCheck,
+  MessageSquare,
 };
 
 const DEFAULT_TABS: Tab[] = [
@@ -173,7 +175,7 @@ const DEFAULT_TABS: Tab[] = [
         id: "prod-medtrack",
         label: "MedTrack",
         iconName: "Package",
-        href: "/products/medtrack",
+        href: "/products/MedTrack",
       },
     ],
   },
@@ -226,6 +228,12 @@ const DEFAULT_TABS: Tab[] = [
         href: "/services/ai-services",
       },
     ],
+  },
+  {
+    id: "communication",
+    label: "Communication",
+    iconName: "MessageSquare",
+    href: "/communication",
   },
   {
     id: "ai-assistant",

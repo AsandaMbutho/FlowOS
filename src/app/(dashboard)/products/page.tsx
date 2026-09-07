@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowRight, ExternalLink, Workflow, FileText } from "lucide-react";
+import {
+  ArrowRight,
+  ExternalLink,
+  Workflow,
+  FileText,
+  Rocket,
+  Shield,
+  BookOpen,
+  Building2,
+  Pill,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const products = [
@@ -10,23 +20,29 @@ const products = [
     id: "flowos",
     name: "FlowOS",
     description: "Workflow Operating System - The platform itself",
-    icon: "🚀",
+    icon: Rocket,
     color: "from-teal-500 to-emerald-500",
+    iconBg: "bg-teal-500/10",
+    iconColor: "text-teal-500",
   },
   {
     id: "cybersafe",
     name: "CyberSafe Africa",
     description: "Cybersecurity platform integration and protection",
-    icon: "🛡️",
+    icon: Shield,
     color: "from-red-500 to-orange-500",
+    iconBg: "bg-red-500/10",
+    iconColor: "text-red-500",
     websiteUrl: "https://cyber-safe-africa.vercel.app/",
   },
   {
     id: "elearning",
     name: "E-Learning Platform",
     description: "Educational content delivery system",
-    icon: "📚",
+    icon: BookOpen,
     color: "from-blue-500 to-cyan-500",
+    iconBg: "bg-blue-500/10",
+    iconColor: "text-blue-500",
     websiteUrl:
       "https://media-on-africa-learning-hub.github.io/Media-On-Africa-Learning-Hub/index.html",
   },
@@ -34,8 +50,19 @@ const products = [
     id: "crm",
     name: "CRM Real Estate Platform",
     description: "Property listings, client tracking, deal pipeline",
-    icon: "🏢",
+    icon: Building2,
     color: "from-purple-500 to-pink-500",
+    iconBg: "bg-purple-500/10",
+    iconColor: "text-purple-500",
+  },
+  {
+    id: "medtrack",
+    name: "MedTrack",
+    description: "Medication reminder and tracker platform.",
+    icon: Pill,
+    color: "from-green-500 to-teal-500",
+    iconBg: "bg-green-500/10",
+    iconColor: "text-green-500",
   },
 ];
 
@@ -93,13 +120,17 @@ export default function ProductsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {products.map((product) => {
           const stat = stats[product.id] || { workflows: 0, documents: 0 };
+          const Icon = product.icon;
           return (
             <Link key={product.id} href={`/products/${product.id}`}>
               <Card className="p-6 hover:shadow-lg transition-all duration-200 border border-border hover:border-accent/40 group cursor-pointer h-full">
                 <div
-                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${product.color} flex items-center justify-center text-2xl mb-4`}
+                  className={`w-12 h-12 rounded-xl ${product.iconBg} flex items-center justify-center mb-4`}
                 >
-                  {product.icon}
+                  <Icon
+                    className={`w-6 h-6 ${product.iconColor}`}
+                    strokeWidth={2}
+                  />
                 </div>
                 <h3 className="font-semibold text-lg mb-2 group-hover:text-[#10b981] transition-colors">
                   {product.name}

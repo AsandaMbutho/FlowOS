@@ -5,21 +5,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Package,
   Workflow,
   FileText,
-  Users,
-  Calendar,
   TrendingUp,
   CheckCircle,
-  Clock,
-  AlertTriangle,
   Loader2,
   ExternalLink,
   Rocket,
-  ShieldCheck,
+  Shield,
   BookOpen,
   Building2,
+  Pill,
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -44,7 +40,7 @@ const productData: Record<
     name: "CyberSafe Africa",
     description: "Cybersecurity platform integration and protection",
     color: "from-red-500 to-orange-500",
-    icon: ShieldCheck,
+    icon: Shield,
     websiteUrl: "https://cyber-safe-africa.vercel.app/",
   },
   elearning: {
@@ -60,6 +56,12 @@ const productData: Record<
     description: "Property listings, client tracking, deal pipeline",
     color: "from-purple-500 to-pink-500",
     icon: Building2,
+  },
+  MedTrack: {
+    name: "MedTrack",
+    description: "Medication reminder and tracker platform.",
+    color: "from-green-500 to-teal-500",
+    icon: Pill,
   },
 };
 
@@ -92,9 +94,8 @@ export default function ProductDetailPage() {
     fetchData();
   }, [slug]);
 
-  // Filter workflows related to this product
   const relatedWorkflows = workflows.filter((w) =>
-    w.title.toLowerCase().includes(slug),
+    w.title.toLowerCase().includes(slug.toLowerCase()),
   );
 
   const totalWorkflows = relatedWorkflows.length;
@@ -134,14 +135,12 @@ export default function ProductDetailPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      {/* Back button */}
       <Link href="/products" className="inline-flex w-fit">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
           <ArrowLeft className="w-4 h-4" /> Back to Products
         </button>
       </Link>
 
-      {/* Header */}
       <div
         className={`bg-gradient-to-br ${product.color} rounded-2xl p-8 text-white`}
       >
@@ -173,7 +172,6 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card-depth p-4">
           <div className="flex items-center gap-3">
@@ -221,7 +219,6 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Workflows */}
       <div className="card-depth p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold flex items-center gap-2 text-foreground">
@@ -268,7 +265,6 @@ export default function ProductDetailPage() {
         )}
       </div>
 
-      {/* Documents */}
       <div className="card-depth p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold flex items-center gap-2 text-foreground">

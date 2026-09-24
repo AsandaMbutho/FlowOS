@@ -30,23 +30,30 @@ interface Document {
   createdAt: string;
 }
 
-const projectColors: Record<string, string> = {
-  flowos: "bg-teal-100 text-teal-700",
-  cybersafe: "bg-red-100 text-red-700",
-  elearning: "bg-blue-100 text-blue-700",
-  crm: "bg-purple-100 text-purple-700",
-  medtrack: "bg-cyan-100 text-cyan-700",
-  uncategorized: "bg-slate-100 text-slate-600",
-};
+interface Product {
+  id: string;
+  slug: string;
+  name: string;
+}
 
-const projectLabels: Record<string, string> = {
-  flowos: "Flowos",
-  cybersafe: "Cybersafe",
-  elearning: "Elearning",
-  crm: "Crm",
-  medtrack: "MedTrack",
-  uncategorized: "Uncategorized",
-};
+// A small rotating palette so every product gets a consistent badge color
+// without the Documents page needing to know about each one by name.
+const BADGE_PALETTE = [
+  "bg-teal-100 text-teal-700",
+  "bg-red-100 text-red-700",
+  "bg-blue-100 text-blue-700",
+  "bg-purple-100 text-purple-700",
+  "bg-cyan-100 text-cyan-700",
+  "bg-amber-100 text-amber-700",
+  "bg-pink-100 text-pink-700",
+  "bg-emerald-100 text-emerald-700",
+];
+
+function badgeColorFor(slug: string) {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
+  return BADGE_PALETTE[hash % BADGE_PALETTE.length];
+}
 
 const typeColors: Record<string, string> = {
   PDF: "bg-red-100 text-red-700",
@@ -58,30 +65,41 @@ const typeColors: Record<string, string> = {
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadProject, setUploadProject] = useState("flowos");
+  const [uploadProject, setUploadProject] = useState("uncategorized");
   const [uploadWorkflowId, setUploadWorkflowId] = useState("");
 
-  const projects = [
-    "all",
-    "flowos",
-    "cybersafe",
-    "elearning",
-    "crm",
-    "medtrack",
-    "uncategorized",
-  ];
+  // Folders = one per product, plus a catch-all for anything not tied to
+  // a product. New products show up here as soon as they're created,
+  // even before any document has been filed under them.
+  const projects = ["all", ...products.map((p) => p.slug), "uncategorized"];
+  const projectLabels: Record<string, string> = {
+    ...Object.fromEntries(products.map((p) => [p.slug, p.name])),
+    uncategorized: "Uncategorized",
+  };
+  const projectColors: Record<string, string> = {
+    ...Object.fromEntries(products.map((p) => [p.slug, badgeColorFor(p.slug)])),
+    uncategorized: "bg-slate-100 text-slate-600",
+  };
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch("/api/documents");
-      const data = await res.json();
+      const [documentsRes, productsRes] = await Promise.all([
+        fetch("/api/documents"),
+        fetch("/api/products"),
+      ]);
+      const data = await documentsRes.json();
+      const productsData = await productsRes.json();
       setDocuments(Array.isArray(data) ? data : []);
+      const productList = Array.isArray(productsData) ? productsData : [];
+      setProducts(productList);
+      if (productList.length > 0) setUploadProject(productList[0].slug);
     } catch (error) {
       console.error("Failed to fetch documents:", error);
     } finally {
@@ -111,7 +129,7 @@ export default function DocumentsPage() {
         await fetchDocuments();
         setShowUploadModal(false);
         setSelectedFile(null);
-        setUploadProject("flowos");
+        setUploadProject(products[0]?.slug || "uncategorized");
         setUploadWorkflowId("");
       } else {
         const error = await res.json();
@@ -333,7 +351,7 @@ export default function DocumentsPage() {
                   Project
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {["flowos", "cybersafe", "elearning", "crm", "medtrack"].map(
+                  {[...products.map((p) => p.slug), "uncategorized"].map(
                     (p) => (
                       <button
                         key={p}

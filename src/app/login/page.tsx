@@ -59,7 +59,7 @@ export default function LoginPage() {
     },
     {
       name: "Lutendo Matshidze (Developer)",
-      email: "lupreshie@gmail.com",
+      email: "lupreshire@gmail.com",
       password: "password123",
       role: "USER",
     },

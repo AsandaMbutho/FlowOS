@@ -5,69 +5,30 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Package,
   Workflow,
   FileText,
-  Users,
-  Calendar,
   TrendingUp,
   CheckCircle,
-  Clock,
-  AlertTriangle,
   Loader2,
   ExternalLink,
-  Rocket,
-  ShieldCheck,
-  BookOpen,
-  Building2,
-  type LucideIcon,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
-const productData: Record<
-  string,
-  {
-    name: string;
-    description: string;
-    color: string;
-    icon: LucideIcon;
-    websiteUrl?: string;
-  }
-> = {
-  flowos: {
-    name: "FlowOS",
-    description: "Workflow Operating System - The platform itself",
-    color: "from-teal-500 to-emerald-500",
-    icon: Rocket,
-  },
-  cybersafe: {
-    name: "CyberSafe Africa",
-    description: "Cybersecurity platform integration and protection",
-    color: "from-red-500 to-orange-500",
-    icon: ShieldCheck,
-    websiteUrl: "https://cyber-safe-africa.vercel.app/",
-  },
-  elearning: {
-    name: "E-Learning Platform",
-    description: "Educational content delivery system",
-    color: "from-blue-500 to-cyan-500",
-    icon: BookOpen,
-    websiteUrl:
-      "https://media-on-africa-learning-hub.github.io/Media-On-Africa-Learning-Hub/index.html",
-  },
-  crm: {
-    name: "CRM Real Estate Platform",
-    description: "Property listings, client tracking, deal pipeline",
-    color: "from-purple-500 to-pink-500",
-    icon: Building2,
-  },
+type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  websiteUrl: string | null;
 };
 
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const product = productData[slug];
 
+  const [product, setProduct] = useState<Product | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,10 +36,18 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [workflowsRes, documentsRes] = await Promise.all([
+        const [productRes, workflowsRes, documentsRes] = await Promise.all([
+          fetch(`/api/products/${slug}`),
           fetch("/api/workflows"),
           fetch(`/api/documents?project=${slug}`),
         ]);
+
+        if (!productRes.ok) {
+          setNotFound(true);
+          return;
+        }
+
+        setProduct(await productRes.json());
         const workflowsData = await workflowsRes.json();
         const documentsData = await documentsRes.json();
         setWorkflows(Array.isArray(workflowsData) ? workflowsData : []);
@@ -92,7 +61,6 @@ export default function ProductDetailPage() {
     fetchData();
   }, [slug]);
 
-  // Filter workflows related to this product
   const relatedWorkflows = workflows.filter((w) =>
     w.title.toLowerCase().includes(slug),
   );
@@ -117,7 +85,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) {
+  if (notFound || !product) {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-bold text-foreground">
@@ -129,8 +97,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  const Icon = product.icon;
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
@@ -147,8 +113,8 @@ export default function ProductDetailPage() {
       >
         <div className="flex items-start justify-between">
           <div>
-            <div className="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center mb-3">
-              <Icon className="w-7 h-7 text-white" strokeWidth={2} />
+            <div className="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center mb-3 text-3xl">
+              {product.icon}
             </div>
             <h1 className="text-3xl font-bold">{product.name}</h1>
             <p className="text-white/80 mt-2 max-w-2xl">

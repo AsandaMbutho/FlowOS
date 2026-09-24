@@ -33,6 +33,7 @@ import {
   Briefcase,
   Bot,
   CalendarCheck,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   Briefcase,
   Bot,
   CalendarCheck,
+  CalendarDays,
 };
 
 const DEFAULT_TABS: Tab[] = [
@@ -80,6 +82,12 @@ const DEFAULT_TABS: Tab[] = [
     label: "Dashboard",
     iconName: "LayoutDashboard",
     href: "/dashboard",
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    iconName: "CalendarDays",
+    href: "/calendar",
   },
   {
     id: "workflows",
@@ -95,7 +103,7 @@ const DEFAULT_TABS: Tab[] = [
       },
       {
         id: "kanban",
-        label: "Kanban Board",
+        label: "Workflows Board",
         iconName: "Kanban",
         href: "/kanban",
       },

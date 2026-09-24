@@ -1,10 +1,8 @@
 // Google Gemini AI Service for FlowOS
-// Uses Gemini Interactions API for multi-turn conversations
-// API key should be restricted to HTTP referrer in Google Cloud Console
+// Runs server-side through Next.js API routes, so the API key must not be
+// exposed as NEXT_PUBLIC_*.
 
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-const MODEL = process.env.NEXT_PUBLIC_GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
-const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+import { GoogleGenAI } from "@google/genai";
 
 export interface GeminiResponse {
   text: string;
@@ -17,55 +15,87 @@ export interface GeminiCallParams {
   previousInteractionId?: string;
 }
 
+export class GeminiApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'GeminiApiError';
+  }
+}
+
 /**
- * Call Google Gemini Interactions API directly
- * The Interactions API manages multi-turn conversation state server-side:
- * instead of resending the whole transcript every turn, we pass
- * previous_interaction_id and only send the new message.
+ * Call Gemini through the stateful Interactions API.
  */
 async function callGemini({
   input,
   systemInstruction,
-  previousInteractionId
+  previousInteractionId,
 }: GeminiCallParams): Promise<GeminiResponse> {
-  if (!API_KEY) {
-    throw new Error(
-      'Gemini API key is missing. Add NEXT_PUBLIC_GEMINI_API_KEY to your .env file.'
+  const apiKey = getGeminiApiKey();
+  const model = cleanEnvValue(process.env.GEMINI_MODEL) || "gemini-3.6-flash";
+
+  if (!apiKey) {
+    throw new GeminiApiError(
+      'Gemini API key is missing. Add GEMINI_API_KEY to your .env.local file and restart the server.',
+      503,
     );
   }
 
-  const body: Record<string, unknown> = { model: MODEL, input };
-  if (systemInstruction) body.system_instruction = systemInstruction;
-  if (previousInteractionId) body.previous_interaction_id = previousInteractionId;
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), 30_000);
 
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': API_KEY
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(
-      `Gemini API error (${res.status}): ${errBody.slice(0, 200)}`
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const interaction = await ai.interactions.create(
+      {
+        model,
+        input,
+        ...(systemInstruction && { system_instruction: systemInstruction }),
+        ...(previousInteractionId && {
+          previous_interaction_id: previousInteractionId,
+        }),
+        generation_config: {
+          temperature: 0.35,
+          top_p: 0.95,
+          max_output_tokens: 1200,
+        },
+      },
+      { abortSignal: abortController.signal },
     );
-  }
 
-  const data = await res.json();
-  
-  // Extract text from the response
-  // The SDKs expose a convenience `.output_text` property; raw REST doesn't,
-  // so we pull the last step's text content ourselves.
-  const lastStep = data.steps?.[data.steps.length - 1];
-  const textBlock = lastStep?.content?.find((c: { type: string }) => c.type === 'text');
-  
-  return {
-    text: textBlock?.text || lastStep?.content?.[0]?.text || '(no response)',
-    interactionId: data.id
-  };
+    const text = interaction.output_text?.trim();
+    if (!text) {
+      throw new GeminiApiError("Gemini returned an empty response.", 502);
+    }
+
+    return {
+      text,
+      interactionId: interaction.id,
+    };
+  } catch (error) {
+    if (error instanceof GeminiApiError) throw error;
+
+    const sdkError = error as { status?: number; message?: string; name?: string };
+    const status = typeof sdkError.status === "number" ? sdkError.status : 503;
+    const message = sdkError.name === "AbortError"
+      ? "Gemini did not respond in time. Please try again."
+      : sdkError.message || "Could not reach Gemini. Check the server internet connection and try again.";
+    throw new GeminiApiError(message, status);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function getGeminiApiKey() {
+  return cleanEnvValue(process.env.GEMINI_API_KEY)
+    || cleanEnvValue(process.env.GOOGLE_API_KEY)
+    || cleanEnvValue(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+}
+
+function cleanEnvValue(value: string | undefined) {
+  return value?.trim().replace(/^["']|["'],?$/g, '');
 }
 
 export interface DocumentReference {
@@ -120,7 +150,7 @@ If they didn't name who a task/workflow is for, omit assignedToName (it'll defau
   return callGemini({
     input: userMessage,
     systemInstruction,
-    previousInteractionId
+    previousInteractionId,
   });
 }
 

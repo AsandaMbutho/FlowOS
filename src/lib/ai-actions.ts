@@ -96,7 +96,7 @@ export async function executeAction(
             stage: 'TODO',
             dueDate: action.dueDate ? new Date(action.dueDate) : null
           },
-          include: { assignee: true }
+          include: { assignee: { select: { name: true } } }
         });
 
         // Create a task under the workflow
@@ -128,7 +128,7 @@ export async function executeAction(
             tags: '',
             stage: 'TODO'
           },
-          include: { assignee: true }
+          include: { assignee: { select: { name: true } } }
         });
 
         const name = workflow.assignee?.name || 'you';

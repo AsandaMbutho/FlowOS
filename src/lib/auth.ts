@@ -3,6 +3,18 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
+function normalizeCredentials(credentials: unknown) {
+  if (typeof credentials === "string") {
+    try {
+      return JSON.parse(credentials) as { email?: string; password?: string };
+    } catch {
+      return {};
+    }
+  }
+
+  return (credentials ?? {}) as { email?: string; password?: string };
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -13,22 +25,34 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         console.log("=== LOGIN ATTEMPT ===");
-        console.log("Raw credentials:", JSON.stringify(credentials));
 
-        const email = credentials?.email?.trim().toLowerCase();
-        const password = credentials?.password?.trim();
+        const parsedCredentials = normalizeCredentials(credentials);
+        const email = parsedCredentials.email?.trim().toLowerCase();
+        const password = parsedCredentials.password?.trim();
 
         console.log("Normalized email:", JSON.stringify(email));
-        console.log("Password length:", password?.length);
 
         if (!email || !password) {
           console.log("FAILED: missing email or password");
           throw new Error("Invalid credentials");
         }
 
-        const user = await db.user.findUnique({
-          where: { email },
-        });
+        let user;
+        try {
+          user = await db.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+            },
+          });
+        } catch (dbError) {
+          console.log("DB LOOKUP THREW AN ERROR:", dbError);
+          throw new Error("Database error during login");
+        }
 
         console.log(
           "USER FOUND:",
@@ -39,8 +63,6 @@ export const authOptions: NextAuthOptions = {
           console.log("FAILED: no user or no password field on user");
           throw new Error("Invalid credentials");
         }
-
-        console.log("Stored hash:", user.password);
 
         const isCorrectPassword = await bcrypt.compare(password, user.password);
 

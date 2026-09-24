@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { extractAction, executeAction } from '@/lib/ai-actions';
-import { askAssistant } from '@/lib/ai-service';
+import { askAssistant, GeminiApiError } from '@/lib/ai-service';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const currentUser = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { id: true },
     });
 
     if (!currentUser) {
@@ -58,8 +59,16 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('AI assistant error:', error);
+
+    if (error instanceof GeminiApiError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status >= 400 && error.status < 600 ? error.status : 502 },
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'The assistant could not process that request. Please try again.' },
       { status: 500 },
     );
   }

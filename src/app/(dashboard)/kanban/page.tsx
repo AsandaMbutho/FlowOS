@@ -2,37 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, GripVertical } from "lucide-react";
+import { Loader2, Plus, GripVertical, Table2, Kanban as KanbanIcon, GanttChartSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { Workflow, Stage, Status, Priority } from "@/types/workflow";
+import { WorkflowTable } from "@/components/workflows/workflow-table";
+import { WorkflowGantt } from "@/components/workflows/workflow-gantt";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Priority = "HIGH" | "MEDIUM" | "LOW";
-type Stage = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "BLOCKED";
-type Status = "To Do" | "In Progress" | "Review" | "Completed" | "Blocked";
-
-interface Assignee {
-  name: string;
-  initials: string;
-  color: string;
-}
-
-interface Workflow {
-  id: string;
-  title: string;
-  description: string;
-  team: string;
-  stage: Stage;
-  status: Status;
-  priority: Priority;
-  progress: number;
-  tasksLeft: number;
-  tags: string[];
-  assignee: Assignee;
-  dueDate: string;
-}
-
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Config (kanban board's own 5-stage color scheme) ──────────────────────
 
 const COLUMNS: {
   stage: Stage;
@@ -276,6 +252,7 @@ function KanbanColumn({
 
 export default function KanbanPage() {
   const router = useRouter();
+  const [view, setView] = useState<"table" | "kanban" | "gantt">("table");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -293,6 +270,40 @@ export default function KanbanPage() {
       setError("Failed to load workflows.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateWorkflow = async (
+    id: string,
+    changes: { dueDate?: string; stage?: Stage; progress?: number },
+  ) => {
+    const res = await fetch(`/api/workflows/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error ?? "Failed to update workflow.");
+    }
+
+    await fetchWorkflows();
+  };
+
+  const handleDueDateChange = async (id: string, dueDate: string) => {
+    try {
+      await updateWorkflow(id, { dueDate });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to update due date.");
+    }
+  };
+
+  const handleMarkComplete = async (id: string) => {
+    try {
+      await updateWorkflow(id, { stage: "DONE", progress: 100 });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to complete workflow.");
     }
   };
 
@@ -387,9 +398,9 @@ export default function KanbanPage() {
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold">Kanban Board</h1>
+          <h1 className="text-2xl font-bold">Workflows Board</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Drag and drop workflows to update their status
+            Table, kanban and timeline views of the same workflows
           </p>
         </div>
         <Button
@@ -442,22 +453,67 @@ export default function KanbanPage() {
         ))}
       </div>
 
-      {/* Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
-        {COLUMNS.map((col) => (
-          <KanbanColumn
-            key={col.stage}
-            col={col}
-            workflows={workflows.filter((w) => w.stage === col.stage)}
-            onDragStart={handleDragStart}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            isDragOver={dragOverStage === col.stage}
-            onCardClick={(id) => router.push(`/workflows/${id}`)}
-          />
+      {/* View switcher */}
+      <div className="flex gap-1 shrink-0 border-b">
+        {(
+          [
+            { id: "table", label: "Main Table", icon: Table2 },
+            { id: "kanban", label: "Kanban", icon: KanbanIcon },
+            { id: "gantt", label: "Timeline", icon: GanttChartSquare },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setView(tab.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+              view === tab.id
+                ? "border-[#10b981] text-[#10b981]"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
         ))}
       </div>
+
+      {/* Views */}
+      {view === "table" && (
+        <div className="flex-1 overflow-auto">
+          <WorkflowTable
+            workflows={workflows}
+            onRowClick={(id) => router.push(`/workflows/${id}`)}
+            onMarkComplete={handleMarkComplete}
+          />
+        </div>
+      )}
+
+      {view === "gantt" && (
+        <div className="flex-1 overflow-auto">
+          <WorkflowGantt
+            workflows={workflows}
+            onDueDateChange={handleDueDateChange}
+          />
+        </div>
+      )}
+
+      {view === "kanban" && (
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
+          {COLUMNS.map((col) => (
+            <KanbanColumn
+              key={col.stage}
+              col={col}
+              workflows={workflows.filter((w) => w.stage === col.stage)}
+              onDragStart={handleDragStart}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              isDragOver={dragOverStage === col.stage}
+              onCardClick={(id) => router.push(`/workflows/${id}`)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

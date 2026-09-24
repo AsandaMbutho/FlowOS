@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { askAssistant } from "@/lib/ai-service";
 import { prisma } from "@/lib/prisma";
-
-const anthropic = new Anthropic();
 
 export async function GET() {
   try {
@@ -54,15 +52,10 @@ export async function GET() {
 
     const workflowText = workflowSummaries.join("\n");
 
-    console.log("Sending workflows to Anthropic AI...");
+    console.log("Sending workflows to Gemini AI...");
 
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-haiku-20241022",
-      max_tokens: 512,
-      messages: [
-        {
-          role: "user",
-          content: `You are the FlowOS AI Intelligence Engine. Analyse the following workflow data and return exactly 6 concise insights for the team dashboard.
+    const response = await askAssistant({
+      userMessage: `You are the FlowOS AI Intelligence Engine. Analyse the following workflow data and return exactly 6 concise insights for the team dashboard.
 
 Rules:
 - Each insight must be a single sentence, max 15 words.
@@ -73,14 +66,9 @@ Rules:
 
 Workflows:
 ${workflowText}`,
-        },
-      ],
     });
 
-    const raw = message.content
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("");
+    const raw = response.text;
 
     const clean = raw.replace(/```json|```/g, "").trim();
     const insights: string[] = JSON.parse(clean);
